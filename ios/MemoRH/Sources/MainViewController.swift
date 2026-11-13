@@ -9,6 +9,9 @@ final class MainViewController: UIViewController, WKNavigationDelegate, WKUIDele
     private let allowedHosts: Set<String> = ["api.github.com", "raw.githubusercontent.com"]
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .portrait }
+    override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
+    /// Même fond que le tableau de bord (#0f1114).
+    private static let bg = UIColor(red: 15.0 / 255, green: 17.0 / 255, blue: 20.0 / 255, alpha: 1)
 
     override func loadView() {
         let conf = WKWebViewConfiguration()
@@ -18,14 +21,15 @@ final class MainViewController: UIViewController, WKNavigationDelegate, WKUIDele
         wv.navigationDelegate = self
         wv.uiDelegate = self
         wv.isOpaque = false
-        wv.backgroundColor = .systemGroupedBackground
-        wv.scrollView.backgroundColor = .systemGroupedBackground
+        wv.backgroundColor = Self.bg
+        wv.scrollView.backgroundColor = Self.bg
         wv.scrollView.contentInsetAdjustmentBehavior = .never
         wv.scrollView.minimumZoomScale = 1
         wv.scrollView.maximumZoomScale = 1
         wv.scrollView.pinchGestureRecognizer?.isEnabled = false
         webView = wv
         view = wv
+        overrideUserInterfaceStyle = .dark
     }
 
     override func viewDidLoad() {
