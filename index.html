@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1001 TDBA:1-->
+<!--TDBV:1002 TDBA:1-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>Mémo RH</title>
@@ -25,16 +25,19 @@ header.top h1{flex:1;margin:0;font-size:26px;letter-spacing:-.4px;overflow:hidde
 main{padding:0 16px}
 .search{width:100%;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 14px;margin:2px 0 14px;outline:none}
 .libH{padding:2px 4px 10px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
-.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.mi{position:relative;aspect-ratio:1/1;min-width:0;border-radius:18px;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;background:var(--card);box-shadow:var(--shadow);font-size:15px;font-weight:700;color:var(--ink);text-align:center;overflow-wrap:anywhere;line-height:1.15}
+.mods{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mi{position:relative;aspect-ratio:1/1;min-width:0;border-radius:16px;padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;background:var(--card);box-shadow:var(--shadow);font-size:12px;font-weight:700;color:var(--ink);text-align:center;overflow-wrap:anywhere;line-height:1.15}
 .mi:active{background:var(--line)}
 .mi *{pointer-events:none}
-.mi svg{width:38px;height:38px;display:block;color:var(--c)}
-.mi .bd{position:absolute;top:8px;right:8px;min-width:24px;height:24px;padding:0 7px;border-radius:12px;background:var(--c);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.mi svg{width:30px;height:30px;display:block;color:var(--c)}
+.mi .bd{position:absolute;top:5px;right:5px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--c);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .mi.off{background:transparent;box-shadow:none;border:2px dashed var(--line);cursor:default}
 .mi.off:active{background:transparent}
 .sec{background:var(--card);border-radius:16px;margin:0 0 14px;box-shadow:var(--shadow);overflow:hidden}
-.sec .sh{display:flex;align-items:center;padding:10px 6px 4px 16px}
+.sec .sh{display:flex;align-items:center;padding:4px 6px 4px 14px;min-height:48px}
+.sec .tg{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:44px;text-align:left}
+.sec .tg h2{flex:1;margin:0;font-size:16px;color:var(--c,var(--ink));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sec .tg .chev{color:var(--mute);width:14px;font-size:14px}
 .sec .sh h2{flex:1;margin:0;font-size:16px;text-transform:none;letter-spacing:0;color:var(--c,var(--ink))}
 .sec .sh .cnt{color:var(--mute);font-size:14px;margin-right:2px}
 .note{display:flex;align-items:flex-start;gap:6px;padding:0 6px 0 4px;border-top:1px solid var(--line)}
@@ -76,8 +79,8 @@ main{padding:0 16px}
 .sheet textarea{height:130px;resize:none}
 .sheet .row{margin-top:0}
 .sheet .row .btn{flex:1}
-.sheet .mi{display:block;width:100%;text-align:left;padding:14px 4px;border-top:1px solid var(--line);font-size:17px}
-.sheet .mi.dng{color:var(--danger)}
+.sheet .mitem{display:block;width:100%;text-align:left;padding:14px 4px;border-top:1px solid var(--line);font-size:17px}
+.sheet .mitem.dng{color:var(--danger)}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 20px);transform:translateX(-50%);max-width:88%;padding:11px 18px;border-radius:14px;background:#22262d;color:#fff;font-size:15px;z-index:30;display:none;text-align:center}
 #toast.bad{background:var(--danger)}
 </style>
@@ -90,11 +93,20 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1001", 10) || 0, UI_NAME = "1.1";
+  var UI_CODE = parseInt("1002", 10) || 0, UI_NAME = "1.2";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   var KEY = "memo-rh-data";
   var NATIVE = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.native);
-  var DEFAULT_CATS = ["RH", "Client", "Fournisseur", "Réunion", "Litige", "Comptabilité", "Juridique"];
+  var DEFAULT = [
+    ["À faire", ["Hebdomadaire", "Mensuel"]],
+    ["RH", ["Congés", "Salaire", "Heures pointage", "Formation", "Frais", "Arrêt maladie", "Alternance", "Intérimaire"]],
+    ["Client", ["Commande client", "Relance client", "Caution bancaire", "Facturation client"]],
+    ["Fournisseur", ["Facture fournisseur", "Achat / commande", "Virement fournisseur"]],
+    ["Réunion", []],
+    ["Litige", ["Avocat"]],
+    ["Comptabilité", ["Pennylane dépôt", "Virement client", "Virement fournisseur", "Bilan", "Banque", "Virement salarié", "Pennylane rapprochement"]],
+    ["Juridique", []]
+  ];
 
   /* ---------- pont avec l'appli native ---------- */
   function sync(m, a) {
@@ -110,8 +122,28 @@ window.MEMO_RH = true;
   /* ---------- données ---------- */
   var D = null, locked = false, lockMsg = "";
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-  function defaults() {
-    return { v: 1, cats: DEFAULT_CATS.map(function (n) { return { id: uid(), name: n, notes: [], subs: [] }; }) };
+  function defCat(d) {
+    return { id: uid(), name: d[0], notes: [], subs: d[1].map(function (n) { return { id: uid(), name: n, notes: [] }; }) };
+  }
+  function defaults() { return { v: 2, cats: DEFAULT.map(defCat) }; }
+  function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim(); }
+  /* Données d'une ancienne version : on garde tout ce qui existe, on ajoute les catégories et sous-catégories qui manquent, on remet l'ordre de la feuille. */
+  function migrate(d) {
+    var changed = false;
+    if ((d.v || 1) >= 2) { return false; }
+    DEFAULT.forEach(function (def) {
+      var c = null, i;
+      for (i = 0; i < d.cats.length; i++) { if (norm(d.cats[i].name) === norm(def[0])) { c = d.cats[i]; break; } }
+      if (!c) { d.cats.push(defCat(def)); changed = true; return; }
+      def[1].forEach(function (sn) {
+        var ok = c.subs.some(function (s) { return norm(s.name) === norm(sn); });
+        if (!ok) { c.subs.push({ id: uid(), name: sn, notes: [] }); changed = true; }
+      });
+    });
+    function rank(c) { var i; for (i = 0; i < DEFAULT.length; i++) { if (norm(DEFAULT[i][0]) === norm(c.name)) { return i; } } return 99; }
+    d.cats = d.cats.map(function (c, i) { return { c: c, i: i }; }).sort(function (x, y) { return rank(x.c) - rank(y.c) || x.i - y.i; }).map(function (x) { return x.c; });
+    d.v = 2;
+    return true;
   }
   function parseData(raw) {
     var d = JSON.parse(raw);
@@ -144,7 +176,7 @@ window.MEMO_RH = true;
       try { raw = window.localStorage.getItem(KEY) || ""; } catch (e) { }
       if (!raw) { D = defaults(); save(); return; }
     }
-    try { D = parseData(raw); } catch (e) {
+    try { D = parseData(raw); if (migrate(D)) { save(); } } catch (e) {
       locked = true; lockMsg = "Le fichier de notes est illisible. Rien n'a été effacé : il est toujours dans Fichiers > Sur mon iPhone > Mémo RH. Contacte Clément avant de continuer.";
       D = defaults();
     }
@@ -173,7 +205,7 @@ window.MEMO_RH = true;
       h += o.input.multi ? '<textarea id="dlgIn" placeholder="' + esc(o.input.ph || "") + '">' + esc(o.input.value || "") + "</textarea>"
         : '<input id="dlgIn" type="text" autocapitalize="sentences" placeholder="' + esc(o.input.ph || "") + '" value="' + esc(o.input.value || "") + '">';
     }
-    if (o.menu) { o.menu.forEach(function (x, k) { h += '<button class="mi' + (x.danger ? " dng" : "") + '" data-mi="' + k + '">' + esc(x.label) + "</button>"; }); }
+    if (o.menu) { o.menu.forEach(function (x, k) { h += '<button class="mitem' + (x.danger ? " dng" : "") + '" data-mi="' + k + '">' + esc(x.label) + "</button>"; }); }
     if (bts.length) {
       h += '<div class="row">';
       bts.forEach(function (b, k) { h += '<button class="btn' + (b.kind ? " " + b.kind : "") + '" data-bi="' + k + '">' + esc(b.label) + "</button>"; });
@@ -241,6 +273,7 @@ window.MEMO_RH = true;
     if (!box) { return; }
     if (!q) {
       var IC = [
+        '<path d="M4 7l2 2 3.500-3.500M4 15l2 2 3.500-3.500M13 7.500h7M13 15.500h7"/>',
         '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.300 2.700-6 6-6s6 2.700 6 6"/><circle cx="17.500" cy="9" r="2.500"/><path d="M17 14.300c2.500.3 4.500 2.500 4.500 5.200"/>',
         '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.400 3.600-8 8-8s8 3.600 8 8"/>',
         '<path d="M2 6h11v10H2zM13 9h4l3 3v4h-7"/><circle cx="6.500" cy="17.500" r="1.800"/><circle cx="16.500" cy="17.500" r="1.800"/>',
@@ -256,7 +289,6 @@ window.MEMO_RH = true;
           + (n ? '<span class="bd">' + n + "</span>" : "")
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (IC[i] || IC[3]) + "</svg><span>" + esc(c.name) + "</span></button>";
       });
-      for (f = g; f % 3 !== 0 || f < 9; f++) { h += '<div class="mi off" data-a="free" aria-hidden="true"></div>'; }
       box.innerHTML = h + "</div>"; return;
     }
     D.cats.forEach(function (c) {
@@ -274,14 +306,20 @@ window.MEMO_RH = true;
     return '<div class="note' + (n.done ? " done" : "") + '" style="--c:' + col + '"><button class="chk" data-a="tog" data-c="' + c + '" data-s="' + s + '" data-n="' + n.id + '" aria-label="Terminer"><i></i></button>'
       + '<button class="nt" data-a="edit" data-c="' + c + '" data-s="' + s + '" data-n="' + n.id + '">' + esc(n.t) + "<small>" + fmt(n.ts) + "</small></button></div>";
   }
+  var openSubs = {};
   function secH(title, notes, c, s, col, menu) {
-    var vis = notes.filter(function (n) { return showDone || !n.done; }), sorted = vis.filter(function (n) { return !n.done; }).concat(vis.filter(function (n) { return n.done; })), key = c + ":" + s;
-    var h = '<section class="sec" style="--c:' + col + '"><div class="sh"><h2>' + esc(title) + '</h2><span class="cnt">' + openCount(notes) + "</span>"
+    var key = c + ":" + s, open = !s || (openSubs[key] !== undefined ? openSubs[key] : openCount(notes) > 0);
+    var vis = notes.filter(function (n) { return showDone || !n.done; }), sorted = vis.filter(function (n) { return !n.done; }).concat(vis.filter(function (n) { return n.done; }));
+    var h = '<section class="sec" style="--c:' + col + '"><div class="sh">'
+      + (s ? '<button class="tg" data-a="tsec" data-c="' + c + '" data-s="' + s + '" aria-expanded="' + open + '"><span class="chev">' + (open ? "▾" : "▸") + "</span><h2>" + esc(title) + '</h2><span class="cnt">' + openCount(notes) + "</span></button>"
+        : "<h2>" + esc(title) + '</h2><span class="cnt">' + openCount(notes) + "</span>")
       + (menu ? '<button class="ib" data-a="submenu" data-c="' + c + '" data-s="' + s + '" aria-label="Options">⋯</button>' : "") + "</div>";
-    if (!sorted.length) { h += '<div class="empty">' + (notes.length ? "Tout est terminé." : "Rien pour l'instant.") + "</div>"; }
-    sorted.forEach(function (n) { h += noteH(n, c, s, col); });
-    h += '<div class="add"><input type="text" enterkeyhint="done" autocapitalize="sentences" placeholder="Nouvelle note" data-add="' + key + '"><button data-a="add" data-c="' + c + '" data-s="' + s + '">Ajouter</button></div></section>';
-    return h;
+    if (open) {
+      if (!sorted.length) { h += '<div class="empty">' + (notes.length ? "Tout est terminé." : "Rien pour l'instant.") + "</div>"; }
+      sorted.forEach(function (n) { h += noteH(n, c, s, col); });
+      h += '<div class="add"><input type="text" enterkeyhint="done" autocapitalize="sentences" placeholder="Nouvelle note" data-add="' + key + '"><button data-a="add" data-c="' + c + '" data-s="' + s + '">Ajouter</button></div>';
+    }
+    return h + "</section>";
   }
   function catH(c) {
     var i = D.cats.indexOf(c), col = color(i), h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>' + esc(c.name) + '</h1><button class="ib" data-a="catmenu" data-c="' + c.id + '" aria-label="Options">⋯</button></header><main>' + banners();
@@ -305,7 +343,7 @@ window.MEMO_RH = true;
     var list = notesOf(c, s), t = String(text || "").trim();
     if (!list || !t) { return; }
     list.push({ id: uid(), t: t, done: false, ts: Date.now() });
-    save(); focusSec = c + ":" + s; render();
+    openSubs[c + ":" + s] = true; save(); focusSec = c + ":" + s; render();
   }
   function onClick(e) {
     var t = e.target.closest ? e.target.closest("[data-a]") : null, a, c, s, n, list, i, cc;
@@ -314,7 +352,7 @@ window.MEMO_RH = true;
     if (a === "open") { view = { n: "cat", id: c }; query = ""; render(); window.scrollTo(0, 0); }
     else if (a === "back") { view = { n: "home" }; render(); window.scrollTo(0, 0); }
     else if (a === "set") { view = { n: "set" }; render(); window.scrollTo(0, 0); }
-    else if (a === "free") { toast("Emplacement libre"); }
+    else if (a === "tsec") { var k2 = c + ":" + s, cur = openSubs[k2] !== undefined ? openSubs[k2] : openCount(notesOf(c, s) || []) > 0; openSubs[k2] = !cur; render(); }
     else if (a === "reload") { post("reloadUi", []); }
     else if (a === "tog") { list = notesOf(c, s); i = list ? findNote(list, n) : -1; if (i >= 0) { list[i].done = !list[i].done; save(); render(); } }
     else if (a === "add") { var inp = document.querySelector('input[data-add="' + c + ":" + s + '"]'); if (inp) { addNote(c, s, inp.value); } }
