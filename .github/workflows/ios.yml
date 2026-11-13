@@ -10,6 +10,9 @@ on:
       - 'version.json'
       - '.github/workflows/ios.yml'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: macos-26
@@ -72,3 +75,14 @@ jobs:
           name: ${{ env.IPA_NAME }}
           path: ios/${{ env.IPA_NAME }}.ipa
           if-no-files-found: error
+
+      - name: Publier l'IPA dans « Releases » (téléchargeable sans compte GitHub)
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(python3 -c "import json;print(json.load(open('version.json'))['name'])")
+          gh release create "compil${{ github.run_number }}" "ios/${IPA_NAME}.ipa" \
+            --repo "${{ github.repository }}" --target "${{ github.sha }}" --latest \
+            --title "Mémo RH ${VER} (compil ${{ github.run_number }})" \
+            --notes "IPA non signé, à installer avec Sideloadly. Interface ${VER}."
