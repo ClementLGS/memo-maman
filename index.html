@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1003 TDBA:1-->
+<!--TDBV:1004 TDBA:1-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Mémo RH</title>
@@ -26,14 +26,18 @@ main{padding:0 16px}
 .mods{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .mi{position:relative;aspect-ratio:1/1;min-width:0;border-radius:16px;border:2px solid var(--line);padding:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;background:var(--card);box-shadow:var(--shadow);font-size:11.5px;font-weight:700;color:var(--ink);text-align:center;overflow-wrap:normal;line-height:1.15}
 .mi:active{background:rgba(255,255,255,.08)}
+.mods.m3{grid-template-columns:repeat(3,1fr);gap:10px}
+.m3 .mi{font-size:14px;padding:24px 8px 6px;gap:8px;justify-content:flex-start}
+.m3 .mi span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word}
+.m3 .mi svg{width:32px;height:32px}
+.m3 .mi .bd{top:7px;right:7px;min-width:22px;height:22px;border-radius:11px;font-size:12px}
+.mi.new{background:transparent;border-style:dashed;color:var(--mute)}
+.mi.new svg{color:var(--mute)}
 .mi *{pointer-events:none}
 .mi svg{width:30px;height:30px;display:block;color:var(--c)}
 .mi .bd{position:absolute;top:5px;right:5px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--c);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .sec{background:var(--card);border:1px solid var(--line);border-radius:16px;margin:0 0 14px;box-shadow:var(--shadow);overflow:hidden}
 .sec .sh{display:flex;align-items:center;padding:4px 6px 4px 14px;min-height:48px}
-.sec .tg{flex:1;min-width:0;display:flex;align-items:center;gap:8px;height:44px;text-align:left}
-.sec .tg h2{flex:1;margin:0;font-size:16px;color:var(--c,var(--ink));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sec .tg .chev{color:var(--mute);width:14px;font-size:14px}
 .sec .sh h2{flex:1;margin:0;font-size:16px;text-transform:none;letter-spacing:0;color:var(--c,var(--ink))}
 .sec .sh .cnt{color:var(--mute);font-size:14px;margin-right:2px}
 .note{display:flex;align-items:flex-start;gap:6px;padding:0 6px 0 4px;border-top:1px solid var(--line)}
@@ -89,7 +93,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1003", 10) || 0, UI_NAME = "1.3";
+  var UI_CODE = parseInt("1004", 10) || 0, UI_NAME = "1.4";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   var KEY = "memo-rh-data";
   var NATIVE = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.native);
@@ -242,6 +246,7 @@ window.MEMO_RH = true;
     var y = window.pageYOffset || 0, app = $("app"), h = "";
     if (view.n === "home") { h = homeH(); }
     else if (view.n === "cat") { h = cat(view.id) ? catH(cat(view.id)) : homeH(); }
+    else if (view.n === "sub") { h = subH(view.id, view.s); }
     else if (view.n === "set") { h = setH(); }
     app.innerHTML = h;
     if (view.n === "home") { fillRes(); }
@@ -294,7 +299,7 @@ window.MEMO_RH = true;
     if (!found.length) { box.innerHTML = '<p class="hint">Aucune note ne contient « ' + esc(query.trim()) + " ».</p>"; return; }
     h = '<div class="res">';
     found.slice(0, 60).forEach(function (f) {
-      h += '<button data-a="open" data-c="' + f.c.id + '">' + esc(f.n.t) + "<small>" + esc(f.c.name) + (f.s ? " › " + esc(f.s.name) : "") + (f.n.done ? " · terminée" : "") + "</small></button>";
+      h += '<button data-a="opensub" data-c="' + f.c.id + '" data-s="' + (f.s ? f.s.id : "") + '">' + esc(f.n.t) + "<small>" + esc(f.c.name) + (f.s ? " › " + esc(f.s.name) : "") + (f.n.done ? " · terminée" : "") + "</small></button>";
     });
     box.innerHTML = h + "</div>";
   }
@@ -302,26 +307,32 @@ window.MEMO_RH = true;
     return '<div class="note' + (n.done ? " done" : "") + '" style="--c:' + col + '"><button class="chk" data-a="tog" data-c="' + c + '" data-s="' + s + '" data-n="' + n.id + '" aria-label="Terminer"><i></i></button>'
       + '<button class="nt" data-a="edit" data-c="' + c + '" data-s="' + s + '" data-n="' + n.id + '">' + esc(n.t) + "<small>" + fmt(n.ts) + "</small></button></div>";
   }
-  var openSubs = {};
-  function secH(title, notes, c, s, col, menu) {
-    var key = c + ":" + s, open = !s || (openSubs[key] !== undefined ? openSubs[key] : openCount(notes) > 0);
+  /* Vue d'une liste de notes : celles de la catégorie (sid vide) ou d'un sous-thème. */
+  function subH(cid, sid) {
+    var c = cat(cid), s = c && sid ? sub(c, sid) : null;
+    if (!c) { view = { n: "home" }; return homeH(); }
+    if (sid && !s) { view = { n: "cat", id: cid }; return catH(c); }
+    var notes = s ? s.notes : c.notes, col = color(D.cats.indexOf(c)), key = cid + ":" + sid;
     var vis = notes.filter(function (n) { return showDone || !n.done; }), sorted = vis.filter(function (n) { return !n.done; }).concat(vis.filter(function (n) { return n.done; }));
-    var h = '<section class="sec" style="--c:' + col + '"><div class="sh">'
-      + (s ? '<button class="tg" data-a="tsec" data-c="' + c + '" data-s="' + s + '" aria-expanded="' + open + '"><span class="chev">' + (open ? "▾" : "▸") + "</span><h2>" + esc(title) + '</h2><span class="cnt">' + openCount(notes) + "</span></button>"
-        : "<h2>" + esc(title) + '</h2><span class="cnt">' + openCount(notes) + "</span>")
-      + (menu ? '<button class="ib" data-a="submenu" data-c="' + c + '" data-s="' + s + '" aria-label="Options">⋯</button>' : "") + "</div>";
-    if (open) {
-      if (!sorted.length) { h += '<div class="empty">' + (notes.length ? "Tout est terminé." : "Rien pour l'instant.") + "</div>"; }
-      sorted.forEach(function (n) { h += noteH(n, c, s, col); });
-      h += '<div class="add"><input type="text" enterkeyhint="done" autocapitalize="sentences" placeholder="Nouvelle note" data-add="' + key + '"><button data-a="add" data-c="' + c + '" data-s="' + s + '">Ajouter</button></div>';
-    }
-    return h + "</section>";
+    var h = '<header class="top"><button class="ib txt" data-a="back">‹ ' + esc(c.name) + "</button><h1>" + esc(s ? s.name : "Notes") + "</h1>"
+      + (s ? '<button class="ib" data-a="submenu" data-c="' + cid + '" data-s="' + sid + '" aria-label="Options">⋯</button>' : "") + "</header><main>" + banners();
+    h += '<section class="sec" style="--c:' + col + '">';
+    if (!sorted.length) { h += '<div class="empty">' + (notes.length ? "Tout est terminé." : "Rien pour l'instant.") + "</div>"; }
+    sorted.forEach(function (n) { h += noteH(n, cid, sid, col); });
+    h += '<div class="add"><input type="text" enterkeyhint="done" autocapitalize="sentences" placeholder="Nouvelle note" data-add="' + key + '"><button data-a="add" data-c="' + cid + '" data-s="' + sid + '">Ajouter</button></div></section></main>';
+    return h;
+  }
+  var IC_NOTE = '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>', IC_DOC = '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>', IC_PLUS = '<path d="M12 5v14M5 12h14"/>';
+  function tile(icon, label, n, c, s, col, cls, act) {
+    return '<button class="mi' + (cls ? " " + cls : "") + '" style="--c:' + col + '" data-a="' + act + '" data-c="' + c + '" data-s="' + s + '" aria-label="' + esc(label) + (n === null ? "" : ", " + n + " à faire") + '">'
+      + (n ? '<span class="bd">' + n + "</span>" : "")
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + icon + "</svg><span>" + esc(label) + "</span></button>";
   }
   function catH(c) {
-    var i = D.cats.indexOf(c), col = color(i), h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>' + esc(c.name) + '</h1><button class="ib" data-a="catmenu" data-c="' + c.id + '" aria-label="Options">⋯</button></header><main>' + banners();
-    h += secH("Notes de la catégorie", c.notes, c.id, "", col, false);
-    c.subs.forEach(function (s) { h += secH(s.name, s.notes, c.id, s.id, col, true); });
-    h += '<button class="big" data-a="subadd" data-c="' + c.id + '">+ Ajouter un sous-thème</button></main>';
+    var col = color(D.cats.indexOf(c)), h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>' + esc(c.name) + '</h1><button class="ib" data-a="catmenu" data-c="' + c.id + '" aria-label="Options">⋯</button></header><main>' + banners();
+    h += '<div class="mods m3">' + tile(IC_NOTE, "Notes", openCount(c.notes), c.id, "", col, "", "opensub");
+    c.subs.forEach(function (s) { h += tile(IC_DOC, s.name, openCount(s.notes), c.id, s.id, col, "", "opensub"); });
+    h += tile(IC_PLUS, "Sous-thème", null, c.id, "", col, "new", "subadd") + "</div></main>";
     return h;
   }
   function setH() {
@@ -339,16 +350,16 @@ window.MEMO_RH = true;
     var list = notesOf(c, s), t = String(text || "").trim();
     if (!list || !t) { return; }
     list.push({ id: uid(), t: t, done: false, ts: Date.now() });
-    openSubs[c + ":" + s] = true; save(); focusSec = c + ":" + s; render();
+    save(); focusSec = c + ":" + s; render();
   }
   function onClick(e) {
     var t = e.target.closest ? e.target.closest("[data-a]") : null, a, c, s, n, list, i, cc;
     if (!t) { return; }
     a = t.getAttribute("data-a"); c = t.getAttribute("data-c") || ""; s = t.getAttribute("data-s") || ""; n = t.getAttribute("data-n") || "";
     if (a === "open") { view = { n: "cat", id: c }; query = ""; render(); window.scrollTo(0, 0); }
-    else if (a === "back") { view = { n: "home" }; render(); window.scrollTo(0, 0); }
+    else if (a === "opensub") { view = { n: "sub", id: c, s: s }; query = ""; render(); window.scrollTo(0, 0); }
+    else if (a === "back") { view = view.n === "sub" ? { n: "cat", id: view.id } : { n: "home" }; render(); window.scrollTo(0, 0); }
     else if (a === "set") { view = { n: "set" }; render(); window.scrollTo(0, 0); }
-    else if (a === "tsec") { var k2 = c + ":" + s, cur = openSubs[k2] !== undefined ? openSubs[k2] : openCount(notesOf(c, s) || []) > 0; openSubs[k2] = !cur; render(); }
     else if (a === "reload") { post("reloadUi", []); }
     else if (a === "tog") { list = notesOf(c, s); i = list ? findNote(list, n) : -1; if (i >= 0) { list[i].done = !list[i].done; save(); render(); } }
     else if (a === "add") { var inp = document.querySelector('input[data-add="' + c + ":" + s + '"]'); if (inp) { addNote(c, s, inp.value); } }
