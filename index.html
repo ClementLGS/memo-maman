@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<!--TDBV:1000 TDBA:1-->
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Mémo RH</title>
+<style>
+:root{
+  --bg:#f4f5f7;--card:#fff;--ink:#16181d;--mute:#6b7280;--line:#e5e7eb;--acc:#3b5bdb;--acc-ink:#fff;--danger:#d63a3a;--shadow:0 1px 2px rgba(0,0,0,.06),0 4px 14px rgba(0,0,0,.05);--case:#eadfce;--case-edge:#d6c6ac;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0e1013;--card:#1a1d23;--ink:#eceef2;--mute:#9aa1ad;--line:#2a2e36;--acc:#748ffc;--acc-ink:#0e1013;--danger:#ff7a70;--shadow:none;--case:#2b2520;--case-edge:#3b332b}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;touch-action:manipulation}
+body{min-height:100vh;padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 24px) env(safe-area-inset-left)}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input,textarea{font:inherit;font-size:16px;color:var(--ink)}
+header.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--bg)}
+header.top h1{flex:1;margin:0;font-size:26px;letter-spacing:-.4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ib{min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--acc)}
+.ib.txt{font-size:17px;padding:0 6px;justify-content:flex-start}
+main{padding:0 16px}
+.search{width:100%;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 14px;margin:2px 0 14px;outline:none}
+.lib{position:relative;background:var(--case);border-radius:18px;padding:22px 12px 4px;box-shadow:var(--shadow),inset 0 0 0 1px var(--case-edge),inset 0 10px 24px rgba(0,0,0,.12);overflow:hidden}
+.shelf{display:flex;align-items:flex-end;gap:7px;padding:0 4px}
+.plank{height:16px;margin:0 -12px 26px;background:linear-gradient(#b98655,#8f6139);box-shadow:0 7px 10px rgba(0,0,0,.22)}
+.lib .plank:last-child{margin-bottom:18px}
+.book{position:relative;flex:0 0 calc((100% - 21px) / 4);height:var(--h);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:12px;padding:12px 0 14px;border-radius:5px 5px 2px 2px;color:#fff;background:linear-gradient(90deg,rgba(0,0,0,.22),rgba(255,255,255,.14) 16%,rgba(255,255,255,0) 52%,rgba(0,0,0,.18)),var(--c);box-shadow:2px 0 0 rgba(0,0,0,.18),0 -1px 0 rgba(255,255,255,.18) inset;transition:transform .12s}
+.book:active{transform:translateY(-8px)}
+.book::before,.book::after{content:"";position:absolute;left:0;right:0;height:3px;background:rgba(255,255,255,.55)}
+.book::before{top:8px}.book::after{bottom:8px}
+.book b{writing-mode:vertical-rl;font-size:18px;overflow:hidden;max-height:100%;font-weight:700;letter-spacing:.6px;margin-top:10px;white-space:nowrap;text-shadow:0 1px 1px rgba(0,0,0,.35)}
+.book .bd{min-width:26px;height:26px;padding:0 6px;border-radius:13px;background:rgba(255,255,255,.95);color:#1b1d22;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:8px}
+.book .bd.z{background:rgba(255,255,255,.28);color:rgba(255,255,255,.9)}
+.sec{background:var(--card);border-radius:16px;margin:0 0 14px;box-shadow:var(--shadow);overflow:hidden}
+.sec .sh{display:flex;align-items:center;padding:10px 6px 4px 16px}
+.sec .sh h2{flex:1;margin:0;font-size:16px;text-transform:none;letter-spacing:0;color:var(--c,var(--ink))}
+.sec .sh .cnt{color:var(--mute);font-size:14px;margin-right:2px}
+.note{display:flex;align-items:flex-start;gap:6px;padding:0 6px 0 4px;border-top:1px solid var(--line)}
+.sec .sh+.note{border-top:0}
+.chk{flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.chk i{width:24px;height:24px;border-radius:50%;border:2px solid var(--mute);display:block;position:relative}
+.note.done .chk i{background:var(--c,var(--acc));border-color:var(--c,var(--acc))}
+.note.done .chk i::after{content:"";position:absolute;left:6px;top:2px;width:6px;height:11px;border:solid var(--acc-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.nt{flex:1;text-align:left;padding:10px 4px;min-height:44px;overflow-wrap:anywhere;white-space:pre-wrap}
+.nt small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
+.note.done .nt{color:var(--mute);text-decoration:line-through}
+.add{display:flex;gap:8px;padding:8px 10px 10px;border-top:1px solid var(--line)}
+.add input{flex:1;min-width:0;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:0 12px;outline:none}
+.add button{height:42px;padding:0 14px;border-radius:10px;background:var(--acc);color:var(--acc-ink);font-weight:600}
+.empty{color:var(--mute);padding:6px 16px 10px;font-size:15px}
+.big{display:block;width:100%;height:48px;border-radius:14px;border:1.5px dashed var(--mute);color:var(--acc);font-weight:600;margin:4px 0 14px}
+.res{background:var(--card);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+.res button{display:block;width:100%;text-align:left;padding:10px 16px;border-top:1px solid var(--line);overflow-wrap:anywhere}
+.res button:first-child{border-top:0}
+.res small{display:block;color:var(--mute);font-size:13px}
+.hint{color:var(--mute);font-size:14px;margin:0 2px 10px}
+.banner{margin:0 0 12px;background:var(--acc);color:var(--acc-ink);border-radius:12px;padding:12px 14px;font-weight:600;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.banner.warn{background:var(--danger);color:#fff;display:block;font-weight:500}
+.banner button{background:rgba(255,255,255,.25);border-radius:8px;padding:6px 12px;font-weight:600}
+.box{background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:14px 16px;margin:0 0 14px}
+.box h3{margin:0 0 6px;font-size:16px}
+.box p{margin:0 0 10px;color:var(--mute);font-size:14px}
+.box textarea{width:100%;height:110px;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:10px;outline:none;font:12px/1.3 ui-monospace,Menlo,monospace;resize:none}
+.row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.btn{height:42px;padding:0 16px;border-radius:10px;background:var(--acc);color:var(--acc-ink);font-weight:600}
+.btn.sec2{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.btn.dng{background:var(--danger);color:#fff}
+#modal{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center}
+#modal.on{display:flex}
+.sheet{width:100%;max-width:560px;background:var(--card);border-radius:20px 20px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 16px)}
+.sheet h3{margin:0 0 10px;font-size:18px}
+.sheet p{margin:0 0 12px;color:var(--mute)}
+.sheet input,.sheet textarea{width:100%;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:10px 12px;outline:none;margin-bottom:12px}
+.sheet textarea{height:130px;resize:none}
+.sheet .row{margin-top:0}
+.sheet .row .btn{flex:1}
+.sheet .mi{display:block;width:100%;text-align:left;padding:14px 4px;border-top:1px solid var(--line);font-size:17px}
+.sheet .mi.dng{color:var(--danger)}
+#toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 20px);transform:translateX(-50%);max-width:88%;padding:11px 18px;border-radius:14px;background:#22262d;color:#fff;font-size:15px;z-index:30;display:none;text-align:center}
+#toast.bad{background:var(--danger)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal"></div>
+<div id="toast"></div>
+<script>
+window.MEMO_RH = true;
+(function () {
+  "use strict";
+  var UI_CODE = parseInt("1000", 10) || 0, UI_NAME = "1.0";
+  var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
+  var KEY = "memo-rh-data";
+  var NATIVE = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.native);
+  var DEFAULT_CATS = ["RH", "Client", "Fournisseur", "Réunion", "Litige", "Comptabilité", "Juridique"];
+
+  /* ---------- pont avec l'appli native ---------- */
+  function sync(m, a) {
+    var r;
+    try { r = window.prompt("__tdb", JSON.stringify({ m: m, a: a })); } catch (e) { r = null; }
+    return r == null ? "" : String(r);
+  }
+  function post(m, a) { try { window.webkit.messageHandlers.native.postMessage({ m: m, a: a }); } catch (e) { } }
+  var pend = {}, nid = 0;
+  window.__nat = function (id, st, body, err) { var cb = pend[id]; delete pend[id]; if (cb) { cb(st, body, err); } };
+  function httpGet(url, headers, cb) { var id = ++nid; pend[id] = cb; post("httpGet", [id, url, headers || {}]); }
+
+  /* ---------- données ---------- */
+  var D = null, locked = false, lockMsg = "";
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function defaults() {
+    return { v: 1, cats: DEFAULT_CATS.map(function (n) { return { id: uid(), name: n, notes: [], subs: [] }; }) };
+  }
+  function parseData(raw) {
+    var d = JSON.parse(raw);
+    if (!d || !Array.isArray(d.cats)) { throw new Error("format"); }
+    d.cats.forEach(function (c) { c.notes = c.notes || []; c.subs = c.subs || []; c.subs.forEach(function (s) { s.notes = s.notes || []; }); });
+    return d;
+  }
+  function save() {
+    if (locked) { return false; }
+    var s = JSON.stringify(D);
+    if (NATIVE) {
+      var r = sync("data.set", [s]);
+      if (r !== "ok") { toast("Sauvegarde impossible : " + r.replace(/^err:/, ""), true); return false; }
+    } else {
+      try { window.localStorage.setItem(KEY, s); } catch (e) { }
+    }
+    return true;
+  }
+  function load() {
+    var raw = "", r;
+    if (NATIVE) {
+      r = sync("data.get", []);
+      if (r === "empty") { D = defaults(); save(); return; }
+      if (r.indexOf("ok:") !== 0) {
+        locked = true; lockMsg = "Le stockage de l'appli ne répond pas. Rien n'a été modifié : ferme complètement l'appli puis rouvre-la.";
+        D = defaults(); return;
+      }
+      raw = r.slice(3);
+    } else {
+      try { raw = window.localStorage.getItem(KEY) || ""; } catch (e) { }
+      if (!raw) { D = defaults(); save(); return; }
+    }
+    try { D = parseData(raw); } catch (e) {
+      locked = true; lockMsg = "Le fichier de notes est illisible. Rien n'a été effacé : il est toujours dans Fichiers > Sur mon iPhone > Mémo RH. Contacte Clément avant de continuer.";
+      D = defaults();
+    }
+  }
+
+  /* ---------- utilitaires ---------- */
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function cat(id) { var i; for (i = 0; i < D.cats.length; i++) { if (D.cats[i].id === id) { return D.cats[i]; } } return null; }
+  function sub(c, id) { var i; for (i = 0; i < c.subs.length; i++) { if (c.subs[i].id === id) { return c.subs[i]; } } return null; }
+  function openCount(list) { return list.filter(function (n) { return !n.done; }).length; }
+  function catOpen(c) { return c.subs.reduce(function (t, s) { return t + openCount(s.notes); }, openCount(c.notes)); }
+  function color(i) { return "hsl(" + ((i * 53 + 222) % 360) + " 58% 52%)"; }
+  function fmt(ts) { try { return new Date(ts).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }); } catch (e) { return ""; } }
+  var toastT = 0;
+  function toast(msg, bad) {
+    var t = $("toast"); t.textContent = msg; t.className = bad ? "bad" : ""; t.style.display = "block";
+    clearTimeout(toastT); toastT = setTimeout(function () { t.style.display = "none"; }, bad ? 6000 : 2500);
+  }
+
+  /* ---------- fenêtres (pas de alert/confirm/prompt : le pont s'en sert) ---------- */
+  function dialog(o) {
+    var m = $("modal"), h = '<div class="sheet"><h3>' + esc(o.title) + "</h3>", inp = null, i, bts = o.buttons || [];
+    if (o.text) { h += "<p>" + esc(o.text) + "</p>"; }
+    if (o.input) {
+      h += o.input.multi ? '<textarea id="dlgIn" placeholder="' + esc(o.input.ph || "") + '">' + esc(o.input.value || "") + "</textarea>"
+        : '<input id="dlgIn" type="text" autocapitalize="sentences" placeholder="' + esc(o.input.ph || "") + '" value="' + esc(o.input.value || "") + '">';
+    }
+    if (o.menu) { o.menu.forEach(function (x, k) { h += '<button class="mi' + (x.danger ? " dng" : "") + '" data-mi="' + k + '">' + esc(x.label) + "</button>"; }); }
+    if (bts.length) {
+      h += '<div class="row">';
+      bts.forEach(function (b, k) { h += '<button class="btn' + (b.kind ? " " + b.kind : "") + '" data-bi="' + k + '">' + esc(b.label) + "</button>"; });
+      h += "</div>";
+    }
+    m.innerHTML = h + "</div>"; m.className = "on";
+    inp = $("dlgIn");
+    function close() { m.className = ""; m.innerHTML = ""; m.onclick = null; }
+    m.onclick = function (e) {
+      var t = e.target, bi, mi;
+      if (t === m) { return close(); }
+      t = t.closest ? t.closest("[data-bi],[data-mi]") : null;
+      if (!t) { return; }
+      bi = t.getAttribute("data-bi"); mi = t.getAttribute("data-mi");
+      if (bi !== null) { var v = inp ? inp.value : null; close(); if (bts[+bi].fn) { bts[+bi].fn(v); } }
+      else if (mi !== null) { close(); o.menu[+mi].fn(); }
+    };
+    if (inp) {
+      if (!o.input.multi) {
+        inp.onkeydown = function (e) {
+          if (e.key === "Enter") { var k; for (k = 0; k < bts.length; k++) { if (!bts[k].kind) { e.preventDefault(); var v = inp.value; close(); if (bts[k].fn) { bts[k].fn(v); } return; } } }
+        };
+      }
+      inp.focus();
+    }
+  }
+  function ask(title, value, ph, label, fn, multi) {
+    dialog({ title: title, input: { value: value, ph: ph, multi: multi }, buttons: [{ label: "Annuler", kind: "sec2" }, { label: label, fn: function (v) { v = String(v || "").trim(); if (v) { fn(v); } } }] });
+  }
+  function confirmBox(title, text, label, fn) {
+    dialog({ title: title, text: text, buttons: [{ label: "Annuler", kind: "sec2" }, { label: label, kind: "dng", fn: fn }] });
+  }
+
+  /* ---------- vues ---------- */
+  var view = { n: "home" }, query = "", showDone = true, focusSec = "", updReady = false, updMsg = "";
+
+  function render() {
+    var y = window.pageYOffset || 0, app = $("app"), h = "";
+    if (view.n === "home") { h = homeH(); }
+    else if (view.n === "cat") { h = cat(view.id) ? catH(cat(view.id)) : homeH(); }
+    else if (view.n === "set") { h = setH(); }
+    app.innerHTML = h;
+    if (view.n === "home") { fillRes(); }
+    if (focusSec) {
+      var el = app.querySelector('input[data-add="' + focusSec + '"]');
+      if (el) { el.focus(); }
+      focusSec = "";
+    }
+    window.scrollTo(0, y);
+  }
+  function banners() {
+    var h = "";
+    if (locked) { h += '<div class="banner warn">' + esc(lockMsg) + "</div>"; }
+    if (updReady) { h += '<div class="banner"><span>Nouvelle version prête</span><button data-a="reload">Recharger</button></div>'; }
+    return h;
+  }
+  function homeH() {
+    var h = '<header class="top"><h1>Mémo RH</h1><button class="ib" data-a="set" aria-label="Réglages">⚙︎</button></header><main>' + banners();
+    h += '<input class="search" id="q" type="search" placeholder="Rechercher dans les notes" value="' + esc(query) + '">';
+    h += '<div id="home"></div></main>';
+    return h;
+  }
+  function fillRes() {
+    var box = $("home"), q = query.trim().toLowerCase(), h = "", found = [];
+    if (!box) { return; }
+    if (!q) {
+      var HS = [210, 232, 218, 226, 214, 236, 224], i, shelf;
+      h = '<p class="hint">Touche un livre pour l\'ouvrir.</p><div class="lib">';
+      for (i = 0; i < D.cats.length; i += 4) {
+        shelf = D.cats.slice(i, i + 4);
+        h += '<div class="shelf">';
+        shelf.forEach(function (c, k) {
+          var n = catOpen(c), idx = i + k;
+          h += '<button class="book" style="--c:' + color(idx) + ';--h:' + HS[idx % HS.length] + 'px" data-a="open" data-c="' + c.id + '" aria-label="' + esc(c.name) + ", " + n + ' à faire"><span class="bd' + (n ? "" : " z") + '">' + n + "</span><b" + (c.name.length > 9 ? ' style="font-size:16px;letter-spacing:.3px"' : "") + ">" + esc(c.name) + "</b></button>";
+        });
+        h += '</div><div class="plank"></div>';
+      }
+      box.innerHTML = h + "</div>"; return;
+    }
+    D.cats.forEach(function (c) {
+      c.notes.forEach(function (n) { if (n.t.toLowerCase().indexOf(q) >= 0) { found.push({ c: c, s: null, n: n }); } });
+      c.subs.forEach(function (s) { s.notes.forEach(function (n) { if (n.t.toLowerCase().indexOf(q) >= 0) { found.push({ c: c, s: s, n: n }); } }); });
+    });
+    if (!found.length) { box.innerHTML = '<p class="hint">Aucune note ne contient « ' + esc(query.trim()) + " ».</p>"; return; }
+    h = '<div class="res">';
+    found.slice(0, 60).forEach(function (f) {
+      h += '<button data-a="open" data-c="' + f.c.id + '">' + esc(f.n.t) + "<small>" + esc(f.c.name) + (f.s ? " › " + esc(f.s.name) : "") + (f.n.done ? " · terminée" : "") + "</small></button>";
+    });
+    box.innerHTML = h + "</div>";
+  }
+  function noteH(n, c, s, col) {
+    return '<div class="note' + (n.done ? " done" : "") + '" style="--c:' + col + '"><button class="chk" data-a="tog" data-c="' + c + '" data-s="' + s + '" data-n="' + n.id + '" aria-label="Terminer"><i></i></button>'
+      + '<button class="nt" data-a="edit" data-c="' + c + '" data-s="' + s + '" data-n="' + n.id + '">' + esc(n.t) + "<small>" + fmt(n.ts) + "</small></button></div>";
+  }
+  function secH(title, notes, c, s, col, menu) {
+    var vis = notes.filter(function (n) { return showDone || !n.done; }), sorted = vis.filter(function (n) { return !n.done; }).concat(vis.filter(function (n) { return n.done; })), key = c + ":" + s;
+    var h = '<section class="sec" style="--c:' + col + '"><div class="sh"><h2>' + esc(title) + '</h2><span class="cnt">' + openCount(notes) + "</span>"
+      + (menu ? '<button class="ib" data-a="submenu" data-c="' + c + '" data-s="' + s + '" aria-label="Options">⋯</button>' : "") + "</div>";
+    if (!sorted.length) { h += '<div class="empty">' + (notes.length ? "Tout est terminé." : "Rien pour l'instant.") + "</div>"; }
+    sorted.forEach(function (n) { h += noteH(n, c, s, col); });
+    h += '<div class="add"><input type="text" enterkeyhint="done" autocapitalize="sentences" placeholder="Nouvelle note" data-add="' + key + '"><button data-a="add" data-c="' + c + '" data-s="' + s + '">Ajouter</button></div></section>';
+    return h;
+  }
+  function catH(c) {
+    var i = D.cats.indexOf(c), col = color(i), h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>' + esc(c.name) + '</h1><button class="ib" data-a="catmenu" data-c="' + c.id + '" aria-label="Options">⋯</button></header><main>' + banners();
+    h += secH("Notes de la catégorie", c.notes, c.id, "", col, false);
+    c.subs.forEach(function (s) { h += secH(s.name, s.notes, c.id, s.id, col, true); });
+    h += '<button class="big" data-a="subadd" data-c="' + c.id + '">+ Ajouter un sous-thème</button></main>';
+    return h;
+  }
+  function setH() {
+    var json = JSON.stringify(D, null, 1), h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>Réglages</h1></header><main>';
+    h += '<div class="box"><h3>Sauvegarde</h3><p>Tes notes sont enregistrées sur ce téléphone, dans Fichiers > Sur mon iPhone > Mémo RH. Tu peux aussi copier le texte ci-dessous pour le garder ailleurs (mail, Notes…).</p>'
+      + '<textarea id="bk" readonly>' + esc(json) + '</textarea><div class="row"><button class="btn" data-a="copy">Copier</button><button class="btn sec2" data-a="restore">Restaurer…</button></div></div>';
+    h += '<div class="box"><h3>Mise à jour</h3><p>Version ' + esc(UI_NAME) + (NATIVE ? "" : " (aperçu navigateur)") + '. L\'appli cherche seule les nouvelles versions.</p><div class="row"><button class="btn" data-a="upd">Chercher une mise à jour</button></div><p id="updmsg" style="margin:10px 0 0">' + esc(updMsg) + "</p></div>";
+    return h + "</main>";
+  }
+
+  /* ---------- actions ---------- */
+  function notesOf(c, s) { var cc = cat(c); if (!cc) { return null; } if (!s) { return cc.notes; } var ss = sub(cc, s); return ss ? ss.notes : null; }
+  function findNote(list, id) { var i; for (i = 0; i < list.length; i++) { if (list[i].id === id) { return i; } } return -1; }
+  function addNote(c, s, text) {
+    var list = notesOf(c, s), t = String(text || "").trim();
+    if (!list || !t) { return; }
+    list.push({ id: uid(), t: t, done: false, ts: Date.now() });
+    save(); focusSec = c + ":" + s; render();
+  }
+  function onClick(e) {
+    var t = e.target.closest ? e.target.closest("[data-a]") : null, a, c, s, n, list, i, cc;
+    if (!t) { return; }
+    a = t.getAttribute("data-a"); c = t.getAttribute("data-c") || ""; s = t.getAttribute("data-s") || ""; n = t.getAttribute("data-n") || "";
+    if (a === "open") { view = { n: "cat", id: c }; query = ""; render(); window.scrollTo(0, 0); }
+    else if (a === "back") { view = { n: "home" }; render(); window.scrollTo(0, 0); }
+    else if (a === "set") { view = { n: "set" }; render(); window.scrollTo(0, 0); }
+    else if (a === "reload") { post("reloadUi", []); }
+    else if (a === "tog") { list = notesOf(c, s); i = list ? findNote(list, n) : -1; if (i >= 0) { list[i].done = !list[i].done; save(); render(); } }
+    else if (a === "add") { var inp = document.querySelector('input[data-add="' + c + ":" + s + '"]'); if (inp) { addNote(c, s, inp.value); } }
+    else if (a === "edit") {
+      list = notesOf(c, s); i = list ? findNote(list, n) : -1;
+      if (i < 0) { return; }
+      dialog({ title: "Modifier la note", input: { value: list[i].t, multi: true }, buttons: [
+        { label: "Supprimer", kind: "dng", fn: function () { var j = findNote(list, n); if (j >= 0) { list.splice(j, 1); save(); render(); } } },
+        { label: "Annuler", kind: "sec2" },
+        { label: "Enregistrer", fn: function (v) { v = String(v || "").trim(); var j = findNote(list, n); if (v && j >= 0) { list[j].t = v; save(); render(); } } }] });
+    }
+    else if (a === "subadd") {
+      ask("Nouveau sous-thème", "", "Nom du sous-thème", "Créer", function (v) { cc = cat(c); if (cc) { cc.subs.push({ id: uid(), name: v, notes: [] }); save(); render(); } });
+    }
+    else if (a === "submenu") {
+      cc = cat(c); var ss = cc ? sub(cc, s) : null;
+      if (!ss) { return; }
+      dialog({ title: ss.name, menu: [
+        { label: "Renommer", fn: function () { ask("Renommer le sous-thème", ss.name, "", "Enregistrer", function (v) { ss.name = v; save(); render(); }); } },
+        { label: "Supprimer ce sous-thème", danger: true, fn: function () {
+          confirmBox("Supprimer « " + ss.name + " » ?", ss.notes.length ? "Ses " + ss.notes.length + " note(s) seront supprimées aussi." : "Il est vide.", "Supprimer", function () {
+            var k = cc.subs.indexOf(ss); if (k >= 0) { cc.subs.splice(k, 1); save(); render(); } });
+        } }], buttons: [{ label: "Fermer", kind: "sec2" }] });
+    }
+    else if (a === "catmenu") {
+      cc = cat(c); if (!cc) { return; }
+      dialog({ title: cc.name, menu: [
+        { label: "Renommer la catégorie", fn: function () { ask("Renommer la catégorie", cc.name, "", "Enregistrer", function (v) { cc.name = v; save(); render(); }); } },
+        { label: showDone ? "Masquer les notes terminées" : "Afficher les notes terminées", fn: function () { showDone = !showDone; render(); } },
+        { label: "Effacer les notes terminées", danger: true, fn: function () {
+          confirmBox("Effacer les notes terminées ?", "Dans cette catégorie et ses sous-thèmes.", "Effacer", function () {
+            function keep(x) { return !x.done; }
+            cc.notes = cc.notes.filter(keep); cc.subs.forEach(function (x) { x.notes = x.notes.filter(keep); }); save(); render(); });
+        } }], buttons: [{ label: "Fermer", kind: "sec2" }] });
+    }
+    else if (a === "copy") {
+      var ta = $("bk");
+      if (ta) {
+        ta.removeAttribute("readonly"); ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length);
+        var ok = false; try { ok = document.execCommand("copy"); } catch (x) { }
+        ta.setAttribute("readonly", ""); ta.blur();
+        toast(ok ? "Sauvegarde copiée" : "Copie impossible : sélectionne le texte à la main", !ok);
+      }
+    }
+    else if (a === "restore") {
+      dialog({ title: "Restaurer une sauvegarde", text: "Colle ici le texte copié avec « Copier ». Les notes actuelles seront remplacées.", input: { value: "", multi: true, ph: "{ \"v\": 1, \"cats\": … }" }, buttons: [
+        { label: "Annuler", kind: "sec2" },
+        { label: "Restaurer", kind: "dng", fn: function (v) {
+          var d; try { d = parseData(String(v || "")); } catch (x) { return toast("Ce texte n'est pas une sauvegarde valide.", true); }
+          if (locked) { return toast("Restauration impossible tant que l'avertissement rouge est affiché.", true); }
+          D = d; if (save()) { toast("Sauvegarde restaurée"); } render();
+        } }] });
+    }
+    else if (a === "upd") { updCheck(true); }
+  }
+  document.addEventListener("click", onClick);
+  document.addEventListener("input", function (e) {
+    if (e.target && e.target.id === "q") { query = e.target.value; fillRes(); }
+  });
+  document.addEventListener("keydown", function (e) {
+    var t = e.target;
+    if (e.key === "Enter" && t && t.getAttribute && t.getAttribute("data-add")) {
+      var k = t.getAttribute("data-add").split(":");
+      e.preventDefault(); addNote(k[0], k[1] || "", t.value);
+    }
+  });
+
+  /* ---------- mises à jour de l'interface ---------- */
+  var lastCheck = 0, busy = false;
+  function say(m, auto) { updMsg = m; var e = $("updmsg"); if (e) { e.textContent = m; } if (!auto && !e) { toast(m); } }
+  function otaSend(html, vj) {
+    var i = 0, j, c;
+    if (sync("ota.begin", []) !== "ok") { return "err:pont indisponible"; }
+    while (i < html.length) {
+      j = Math.min(i + 60000, html.length);
+      c = html.charCodeAt(j - 1);
+      if (j < html.length && c >= 0xD800 && c <= 0xDBFF) { j--; }
+      if (sync("ota.chunk", [html.substring(i, j)]) !== "ok") { return "err:transfert interrompu"; }
+      i = j;
+    }
+    return sync("ota.commit", [vj]);
+  }
+  /* GitHub garde ses fichiers « raw » ~5 min en cache : on demande d'abord le numéro exact du dernier commit, puis on lit les fichiers à cette adresse. */
+  function updCheck(manual) {
+    if (!NATIVE) { if (manual) { say("Mises à jour disponibles seulement dans l'appli installée."); } return; }
+    if (busy) { return; }
+    busy = true; lastCheck = Date.now();
+    var raw = "https://raw.githubusercontent.com/" + REPO.owner + "/" + REPO.repo + "/";
+    function fin(msg) { busy = false; if (msg) { say(msg, !manual); } }
+    if (manual) { say("Recherche en cours…"); }
+    httpGet("https://api.github.com/repos/" + REPO.owner + "/" + REPO.repo + "/commits/" + REPO.branch + "?t=" + Date.now(), { "Accept": "application/vnd.github.sha" }, function (st, body) {
+      var sha = String(body || "").replace(/\s/g, ""), base = /^[0-9a-f]{40}$/.test(sha) ? raw + sha : raw + REPO.branch;
+      httpGet(base + "/version.json?t=" + Date.now(), {}, function (st2, vtxt, err2) {
+        var v;
+        if (err2 || st2 !== 200) { return fin(manual ? "Recherche impossible (" + (err2 || "erreur " + st2) + ")." : ""); }
+        try { v = JSON.parse(vtxt); } catch (e) { return fin(manual ? "Recherche impossible : version.json illisible." : ""); }
+        if (typeof v.ui !== "number" || v.ui === UI_CODE) { return fin(manual ? "Déjà à jour (version " + UI_NAME + ")." : ""); }
+        httpGet(base + "/index.html?t=" + Date.now(), {}, function (st3, html, err3) {
+          if (err3 || st3 !== 200) { return fin(manual ? "Téléchargement impossible (" + (err3 || "erreur " + st3) + ")." : ""); }
+          var r = otaSend(html, vtxt);
+          if (r.indexOf("ok:") !== 0) { return fin(manual ? "Mise à jour refusée : " + r.replace(/^err:/, "") : ""); }
+          busy = false; updReady = true; say("Version " + (v.name || v.ui) + " prête.", !manual);
+          if (manual) { post("reloadUi", []); } else { render(); }
+        });
+      });
+    });
+  }
+  setTimeout(function () { updCheck(false); }, 5000);
+  setInterval(function () { updCheck(false); }, 6 * 3600 * 1000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && Date.now() - lastCheck > 3600 * 1000) { updCheck(false); } });
+  window.addEventListener("pagehide", function () { save(); });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>

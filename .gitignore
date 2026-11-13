@@ -1,0 +1,7 @@
+ios/*.xcodeproj
+ios/build/
+ios/build.log
+ios/Payload/
+ios/*.ipa
+# copie de l'interface, refaite à chaque compilation (voir .github/workflows/ios.yml)
+ios/MemoRH/Resources/index.html

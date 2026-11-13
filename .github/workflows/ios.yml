@@ -1,0 +1,74 @@
+name: iPhone (IPA non signé)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, test]
+    paths:
+      - 'ios/**'
+      - 'index.html'
+      - 'version.json'
+      - '.github/workflows/ios.yml'
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versions
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Installer XcodeGen
+        run: brew install xcodegen
+
+      - name: Tests (contrôle des mises à jour, stockage, version.json)
+        run: |
+          swiftc -o /tmp/memotest ios/MemoRH/Sources/Hash.swift ios/MemoRH/Sources/Store.swift ios/MemoRH/Sources/Ota.swift ios/Tests/main.swift
+          /tmp/memotest version.json index.html
+
+      - name: Copier l'interface (index.html de la branche)
+        run: cp index.html ios/MemoRH/Resources/index.html
+
+      - name: Générer le projet Xcode
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Compiler (sans signature)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild -project MemoRH.xcodeproj -scheme MemoRH \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            build 2>&1 | tee build.log | tail -n 40
+
+      - name: Fabriquer l'IPA
+        working-directory: ios
+        run: |
+          APP=$(find build/Build/Products -maxdepth 2 -name 'MemoRH.app' | head -1)
+          echo "App : $APP"
+          rm -rf Payload && mkdir Payload && cp -R "$APP" Payload/
+          VER=$(python3 -c "import json;print(json.load(open('../version.json'))['name'])")
+          NAME="MemoRH-${VER}-compil${{ github.run_number }}"
+          echo "IPA_NAME=$NAME" >> "$GITHUB_ENV"
+          zip -qry "$NAME.ipa" Payload
+          ls -la "$NAME.ipa"
+          plutil -p "$APP/Info.plist" | grep -E 'MinimumOSVersion|CFBundleIdentifier|UIDeviceFamily' || true
+
+      - name: Erreurs de compilation (pour les voir dans les annotations)
+        if: failure()
+        working-directory: ios
+        run: |
+          [ -f build.log ] && grep -E "error:" build.log | sort -u | head -30 | while IFS= read -r l; do echo "::error::${l:0:450}"; done || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.IPA_NAME }}
+          path: ios/${{ env.IPA_NAME }}.ipa
+          if-no-files-found: error
