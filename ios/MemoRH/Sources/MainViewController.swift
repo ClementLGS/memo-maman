@@ -87,6 +87,11 @@ final class MainViewController: UIViewController, WKNavigationDelegate, WKUIDele
                 let js = "window.__bk(\(Self.literal(result)))"
                 DispatchQueue.main.async { self?.webView.evaluateJavaScript(js, completionHandler: nil) }
             }
+        case "feedbackSend":
+            Backup.sendFeedback((a.first as? String) ?? "") { [weak self] result in
+                let js = "window.__fb(\(Self.literal(result)))"
+                DispatchQueue.main.async { self?.webView.evaluateJavaScript(js, completionHandler: nil) }
+            }
         case "httpGet":
             guard a.count >= 3, let id = (a[0] as? NSNumber)?.intValue else { return }
             httpGet(id: id, urlString: (a[1] as? String) ?? "", headers: (a[2] as? [String: Any]) ?? [:])

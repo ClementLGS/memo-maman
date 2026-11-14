@@ -41,6 +41,12 @@ if let b = Backup.putBody(message: "m", content: Data("x".utf8), sha: nil), let 
     check("corps de requête sans sha (premier envoi)", o["sha"] == nil)
 }
 
+// Chemin des remarques envoyées
+let fbDate = Date(timeIntervalSince1970: 1_794_000_000) // 2026-11-06 ~ heure de Paris
+let fbP = Backup.feedbackPath(fbDate)
+check("feedback : chemin feedback/AAAA-MM-JJ-HHMMSS.md", fbP.range(of: "^feedback/[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{6}\\.md$", options: .regularExpression) != nil)
+check("feedback : deux dates différentes, deux fichiers", Backup.feedbackPath(fbDate) != Backup.feedbackPath(fbDate.addingTimeInterval(1)))
+
 // Fichier de réglages
 let cfgTxt = "\u{FEFF}# commentaire\nmise_a_jour = ClementLGS/memo-maman\nSauvegarde_Depot = \"Clem/notes-sauv\"\nsauvegarde_jeton = github_pat_ABC=def\ninconnu = x\n"
 let cfgV = Config.parse(cfgTxt)

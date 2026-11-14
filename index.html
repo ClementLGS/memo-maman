@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1010 TDBA:3-->
+<!--TDBV:1011 TDBA:4-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -50,6 +50,15 @@ main{padding:0 16px}
 .note.done .chk i{background:var(--c,var(--acc));border-color:var(--c,var(--acc))}
 .note.done .chk i::after{content:"";position:absolute;left:6px;top:2px;width:6px;height:11px;border:solid var(--acc-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
 .nt{flex:1;text-align:left;padding:10px 4px;min-height:44px;overflow-wrap:anywhere;white-space:pre-wrap}
+.box textarea.fbt{width:100%;height:96px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:12px;outline:none;resize:none;font:16px/1.35 -apple-system,system-ui,sans-serif}
+.fbrow>span{flex:0 0 100%}
+.fbrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--mute)}
+.pill{height:38px;padding:0 14px;border-radius:19px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-weight:600;font-size:14px}
+.pill:active{background:rgba(255,255,255,.1)}
+.fbi{display:flex;align-items:flex-start;gap:10px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--t);border-radius:14px;padding:10px 6px 10px 12px;margin:0 0 8px}
+.fbi>b{flex:none;width:78px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--t);padding-top:3px}
+.fbi>div{flex:1;min-width:0;overflow-wrap:anywhere}
+.fbi small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
 .xdel{flex:none;width:44px;height:44px;margin-right:-6px;font-size:30px;line-height:1;color:var(--mute);display:flex;align-items:center;justify-content:center}
 .xdel:active{color:var(--bad,#ff6b6b)}
 .nt small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
@@ -99,7 +108,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1010", 10) || 0, UI_NAME = "1.10";
+  var UI_CODE = parseInt("1011", 10) || 0, UI_NAME = "1.11";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -118,8 +127,7 @@ window.MEMO_RH = true;
     ["Réunion", []],
     ["Litige", ["Avocat"]],
     ["Comptabilité", ["Pennylane dépôt", "Virement client", "Virement fournisseur", "Bilan", "Banque", "Virement salarié", "Pennylane rapprochement"]],
-    ["Juridique", []],
-    ["Feedback", ["Idées", "Bugs"]]
+    ["Juridique", []]
   ];
 
   /* ---------- pont avec l'appli native ---------- */
@@ -139,7 +147,7 @@ window.MEMO_RH = true;
   function defCat(d) {
     return { id: uid(), name: d[0], notes: [], subs: d[1].map(function (n) { return { id: uid(), name: n, notes: [] }; }) };
   }
-  function defaults() { return { v: 3, cats: DEFAULT.map(defCat) }; }
+  function defaults() { return { v: 4, fb: [], cats: DEFAULT.map(defCat) }; }
   function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim(); }
   /* Données d'une ancienne version : on garde tout ce qui existe, on ajoute les catégories et sous-catégories qui manquent, on remet l'ordre de la feuille. */
   function migrate(d) {
@@ -158,17 +166,26 @@ window.MEMO_RH = true;
       d.cats = d.cats.map(function (c, k) { return { c: c, i: k }; }).sort(function (x, y) { return rank(x.c) - rank(y.c) || x.i - y.i; }).map(function (x) { return x.c; });
       d.v = 2; changed = true;
     }
-    if (d.v < 3) { /* v3 : catégorie Feedback (ajoutée à la fin, l'ordre choisi par l'utilisateur n'est pas touché) */
-      var has = false;
-      for (i = 0; i < d.cats.length; i++) { if (norm(d.cats[i].name) === "feedback") { has = true; } }
-      if (!has) { d.cats.push(defCat(DEFAULT[DEFAULT.length - 1])); }
-      d.v = 3; changed = true;
+    if (d.v < 4) { /* v4 : Feedback devient un écran à part (D.fb) ; les notes de la catégorie 1.9 y sont reprises */
+      d.fb = d.fb || [];
+      for (i = d.cats.length - 1; i >= 0; i--) {
+        if (norm(d.cats[i].name) === "feedback") {
+          var fc = d.cats[i];
+          fc.notes.forEach(function (n) { d.fb.push({ id: uid(), k: "amel", t: n.t, ts: n.ts || Date.now(), ver: "1.9" }); });
+          fc.subs.forEach(function (sb) {
+            sb.notes.forEach(function (n) { d.fb.push({ id: uid(), k: norm(sb.name) === "bugs" ? "bug" : norm(sb.name) === "idees" ? "idee" : "amel", t: n.t, ts: n.ts || Date.now(), ver: "1.9" }); });
+          });
+          d.cats.splice(i, 1);
+        }
+      }
+      d.v = 4; changed = true;
     }
     return changed;
   }
   function parseData(raw) {
     var d = JSON.parse(raw);
     if (!d || !Array.isArray(d.cats)) { throw new Error("format"); }
+    d.fb = Array.isArray(d.fb) ? d.fb : [];
     d.cats.forEach(function (c) { c.notes = c.notes || []; c.subs = c.subs || []; c.subs.forEach(function (s) { s.notes = s.notes || []; }); });
     return d;
   }
@@ -272,6 +289,7 @@ window.MEMO_RH = true;
     else if (view.n === "cat") { h = cat(view.id) ? catH(cat(view.id)) : homeH(); }
     else if (view.n === "sub") { h = subH(view.id, view.s); }
     else if (view.n === "set") { h = setH(); }
+    else if (view.n === "fb") { h = fbH(); }
     app.innerHTML = h;
     if (view.n === "home") { fillRes(); }
     if (focusSec) {
@@ -316,6 +334,8 @@ window.MEMO_RH = true;
           + (n ? '<span class="bd">' + n + "</span>" : "")
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (IC[rk(c)] || IC[3]) + "</svg><span>" + esc(c.name) + "</span></button>";
       });
+      h += '<button class="mi" style="--c:' + color(8) + '" data-a="fb" aria-label="Feedback, ' + D.fb.length + ' remarque(s)">' + (D.fb.length ? '<span class="bd">' + D.fb.length + "</span>" : "")
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + IC[8] + "</svg><span>Feedback</span></button>";
       box.innerHTML = h + '</div><p class="hint" style="margin-top:12px">Appui long sur une catégorie pour la déplacer.</p>'; return;
     }
     D.cats.forEach(function (c) {
@@ -362,6 +382,42 @@ window.MEMO_RH = true;
     h += tile(IC_PLUS, "Sous-thème", null, c.id, "", col, "new", "subadd") + '</div><p class="hint" style="margin-top:12px">Appui long sur un sous-thème pour le déplacer.</p></main>';
     return h;
   }
+  /* ---------- écran Feedback : remarques à envoyer à Claude (déposées dans le dépôt GitHub de sauvegarde) ---------- */
+  var FBK = { amel: ["À améliorer", "#4dd4ac"], idee: ["Idée", "#ffc53d"], bug: ["Bug", "#ff6b6b"] }, fbDraft = "", fbMsg = "", fbBusy = false;
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function fbDate(ts) { var d = new Date(ts); return pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + " à " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function fbH() {
+    var h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>Feedback</h1></header><main>' + banners();
+    h += '<div class="box"><textarea class="fbt" id="fbT" placeholder="Écris ici une remarque : ce qui va bien, ce qu\'il faut améliorer, une idée, un bug…">' + esc(fbDraft) + "</textarea>"
+      + '<div class="fbrow"><span>Ranger la remarque dans :</span><button class="pill" data-a="fbadd" data-k="amel">À améliorer</button><button class="pill" data-a="fbadd" data-k="idee">Idée</button><button class="pill" data-a="fbadd" data-k="bug">Bug</button></div>'
+      + '<div class="fbrow"><button class="btn" data-a="fbsend">Envoyer à Claude (' + D.fb.length + ')</button></div>'
+      + '<p class="hint" id="fbmsg" style="margin:8px 0 0">' + esc(fbMsg || "Les remarques restent sur le téléphone tant que tu ne les envoies pas.") + "</p></div>";
+    D.fb.slice().reverse().forEach(function (f) {
+      var k = FBK[f.k] || FBK.amel;
+      h += '<div class="fbi" style="--t:' + k[1] + '"><b>' + esc(k[0]) + "</b><div><span>" + esc(f.t) + "</span><small>" + fbDate(f.ts) + " · version " + esc(f.ver || "?") + '</small></div><button class="xdel" data-a="fbdel" data-n="' + f.id + '" aria-label="Supprimer la remarque">×</button></div>';
+    });
+    return h + "</main>";
+  }
+  function fbText() {
+    var out = "# Feedback — " + fbDate(Date.now()) + " (version " + UI_NAME + ")\n", order = ["bug", "idee", "amel"];
+    order.forEach(function (k) {
+      var l = D.fb.filter(function (f) { return f.k === k; });
+      if (l.length) { out += "\n## " + FBK[k][0] + "\n"; l.forEach(function (f) { out += "- " + String(f.t).replace(/\s*\n\s*/g, " ") + " (" + fbDate(f.ts) + ", version " + (f.ver || "?") + ")\n"; }); }
+    });
+    return out;
+  }
+  var fbSent = [];
+  window.__fb = function (res) {
+    var m = $("fbmsg"); res = String(res || ""); fbBusy = false;
+    if (res === "ok") {
+      D.fb = D.fb.filter(function (f) { return fbSent.indexOf(f.id) < 0; }); fbSent = []; save();
+      fbMsg = "Envoyé ✓ Dis à Claude de lire les feedbacks.";
+      if (view.n === "fb") { render(); }
+    } else {
+      fbMsg = "Échec de l'envoi : " + res.replace(/^err:/, "") + ". Tes remarques sont gardées.";
+      if (m) { m.textContent = fbMsg; }
+    }
+  };
   function bkInfo() {
     var r = NATIVE ? sync("bk.status", []) : "", p;
     if (r.indexOf("ok:") !== 0) { return { repo: "", token: false, ts: 0 }; }
@@ -465,6 +521,24 @@ window.MEMO_RH = true;
         } }] });
     }
     else if (a === "upd") { updCheck(true); }
+    else if (a === "fb") { view = { n: "fb" }; render(); window.scrollTo(0, 0); }
+    else if (a === "fbadd") {
+      var ft = $("fbT"), tx = (ft ? ft.value : fbDraft).trim();
+      if (!tx) { return toast("Écris d'abord ta remarque.", true); }
+      if (locked) { return toast("Impossible tant que l'avertissement rouge est affiché.", true); }
+      D.fb.push({ id: uid(), k: t.getAttribute("data-k") || "amel", t: tx, ts: Date.now(), ver: UI_NAME }); fbDraft = ""; fbMsg = ""; save(); render();
+    }
+    else if (a === "fbdel") { D.fb = D.fb.filter(function (f) { return f.id !== n; }); save(); render(); }
+    else if (a === "fbsend") {
+      if (fbBusy) { return; }
+      if (!D.fb.length) { return toast("Aucune remarque à envoyer.", true); }
+      if (!NATIVE) { return toast("Envoi disponible seulement dans l'appli installée.", true); }
+      var bi = bkInfo();
+      if (!bi.repo || !bi.token) { return toast("Configure d'abord la sauvegarde GitHub dans Réglages.", true); }
+      fbBusy = true; fbSent = D.fb.map(function (f) { return f.id; }); fbMsg = "Envoi en cours…";
+      var fm = $("fbmsg"); if (fm) { fm.textContent = fbMsg; }
+      post("feedbackSend", [fbText()]);
+    }
     else if (a === "cfgimp") { cfgImport(true); }
     else if (a === "updsave") {
       var us = $("updSrc"), v = us ? us.value.trim() : "";
@@ -539,6 +613,7 @@ window.MEMO_RH = true;
   document.addEventListener("click", function (e) { if (Date.now() - noClick < 500) { e.stopPropagation(); e.preventDefault(); } }, true);
   document.addEventListener("click", onClick);
   document.addEventListener("input", function (e) {
+    if (e.target && e.target.id === "fbT") { fbDraft = e.target.value; }
     if (e.target && e.target.id === "q") { query = e.target.value; fillRes(); }
   });
   document.addEventListener("keydown", function (e) {

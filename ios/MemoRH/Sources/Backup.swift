@@ -129,4 +129,42 @@ enum Backup {
             }.resume()
         }.resume()
     }
+
+    /// Chemin du fichier de remarques envoyées : feedback/AAAA-MM-JJ-HHMMSS.md (heure de Paris).
+    static func feedbackPath(_ d: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "Europe/Paris")
+        f.dateFormat = "yyyy-MM-dd-HHmmss"
+        return "feedback/" + f.string(from: d) + ".md"
+    }
+
+    /// Dépose les remarques (texte Markdown fourni par la page) dans le dépôt de sauvegarde. Résultat : « ok » ou « err:… ».
+    static func sendFeedback(_ text: String, completion: @escaping (String) -> Void) {
+        let token = Keychain.get() ?? ""
+        let repoName = repo
+        guard validRepo(repoName), !token.isEmpty else { completion("err:sauvegarde GitHub non configurée (Réglages)"); return }
+        let data = Data(text.utf8)
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, data.count < 200_000 else { completion("err:remarques vides ou trop longues"); return }
+        guard let url = URL(string: "https://api.github.com/repos/\(repoName)/contents/\(feedbackPath(Date()))"),
+              let body = putBody(message: "Feedback de l'appli", content: data, sha: nil) else { completion("err:préparation impossible"); return }
+        var r = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 25)
+        r.httpMethod = "PUT"
+        r.httpBody = body
+        r.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        r.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        r.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        r.setValue("PriseDeNotesCiolek", forHTTPHeaderField: "User-Agent")
+        r.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        URLSession.shared.dataTask(with: r) { _, resp, _ in
+            switch (resp as? HTTPURLResponse)?.statusCode ?? 0 {
+            case 200, 201: completion("ok")
+            case 0: completion("err:réseau indisponible")
+            case 401, 403: completion("err:jeton refusé (droit « Contents : lecture et écriture » nécessaire)")
+            case 404: completion("err:dépôt introuvable, ou jeton sans accès à ce dépôt")
+            case 409, 422: completion("err:conflit, réessaie dans une seconde")
+            case let c: completion("err:GitHub a répondu \(c)")
+            }
+        }.resume()
+    }
 }
