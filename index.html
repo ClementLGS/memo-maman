@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1011 TDBA:4-->
+<!--TDBV:1012 TDBA:4-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -16,7 +16,8 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.35 -apple-s
 body{min-height:100vh;padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 24px) env(safe-area-inset-left)}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 input,textarea{font:inherit;font-size:16px;color:var(--ink)}
-header.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--bg)}
+header.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(15,17,20,.55);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+#app{position:relative;z-index:1}
 header.top h1.long{font-size:23px}
 header.top h1{flex:1;margin:0;font-size:26px;letter-spacing:-.4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ib{min-width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:34px;line-height:1;color:var(--acc)}
@@ -34,6 +35,41 @@ main{padding:0 16px}
 .m3 .mi .bd{top:7px;right:7px;min-width:24px;height:24px;border-radius:12px;font-size:13px}
 .mi.ph{opacity:.3}
 .dragclone{position:fixed;z-index:50;margin:0;pointer-events:none;transform:scale(1.07);opacity:.92;box-shadow:0 14px 30px rgba(0,0,0,.55)}
+/* ---- fonds d'écran ---- */
+#wp{position:fixed;inset:0;z-index:0;overflow:hidden;background:var(--bg);pointer-events:none}
+#wp::after{content:"";position:absolute;inset:0;background:rgba(8,10,14,.28)}
+#wp.wp-nuit::after{display:none}
+#wp.wp-ocean{background:linear-gradient(160deg,#0b2447,#19376d 45%,#0a7d9b)}
+#wp.wp-foret{background:linear-gradient(160deg,#07140f,#0e3b2b 55%,#1d6b4a)}
+#wp.wp-crep{background:linear-gradient(170deg,#1a1038,#4a1d6b 45%,#c2410c)}
+#wp.wp-braise{background:linear-gradient(165deg,#140808,#4a1414 50%,#9a3412)}
+#wp.wp-aurore{background:#0a0f1c}
+#wp.wp-aurore i{position:absolute;width:75vmax;height:75vmax;border-radius:50%;filter:blur(70px);opacity:.55;animation:wpd 20s ease-in-out infinite alternate}
+#wp.wp-aurore i:nth-child(1){background:#22d3a0;left:-30vmax;top:-25vmax}
+#wp.wp-aurore i:nth-child(2){background:#6366f1;right:-35vmax;top:10vh;animation-duration:26s;animation-delay:-8s}
+#wp.wp-aurore i:nth-child(3){background:#d946ef;left:-10vmax;bottom:-40vmax;animation-duration:32s;animation-delay:-15s;opacity:.4}
+@keyframes wpd{from{transform:translate(0,0) scale(1)}to{transform:translate(18vw,14vh) scale(1.25)}}
+#wp.wp-vagues{background:linear-gradient(180deg,#0a1a3a,#0e3a66 60%,#0b5d7a)}
+#wp.wp-vagues svg{position:absolute;left:0;width:200%;height:42vh;animation:wpw 16s linear infinite}
+#wp.wp-vagues svg:nth-child(1){bottom:0;fill:rgba(56,189,248,.35)}
+#wp.wp-vagues svg:nth-child(2){bottom:-4vh;fill:rgba(45,212,191,.3);animation-duration:23s;animation-direction:reverse}
+#wp.wp-vagues svg:nth-child(3){bottom:-9vh;fill:rgba(99,102,241,.35);animation-duration:31s}
+@keyframes wpw{to{transform:translateX(-50%)}}
+#wp.wp-etoiles{background:radial-gradient(ellipse at 50% 120%,#1b2a5a,#070b1a 70%)}
+#wp.wp-etoiles i{position:absolute;border-radius:50%;background:#fff;animation:wpt 4s ease-in-out infinite}
+@keyframes wpt{0%,100%{opacity:.15;transform:scale(.8)}50%{opacity:1;transform:scale(1.25)}}
+#wp.wp-bulles{background:linear-gradient(180deg,#06222e,#0b4a5a)}
+#wp.wp-bulles i{position:absolute;bottom:-12vh;border-radius:50%;border:1.5px solid rgba(160,240,255,.45);background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.25),rgba(255,255,255,0) 60%);animation:wpb 14s linear infinite}
+@keyframes wpb{to{transform:translateY(-125vh) translateX(6vw)}}
+#wp.wp-spectre{background:linear-gradient(120deg,#1e3a8a,#6d28d9,#be185d,#0f766e);background-size:300% 300%;animation:wps 18s ease infinite}
+@keyframes wps{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}
+@media (prefers-reduced-motion:reduce){#wp,#wp *{animation:none!important}}
+.wpgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px}
+.wpt{position:relative;aspect-ratio:3/4;border-radius:14px;border:2px solid var(--line);overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding:0 4px 8px;font-size:13px;font-weight:700;color:#fff;text-align:center;text-shadow:0 1px 6px rgba(0,0,0,.7);background:var(--pv)}
+.wpt *{pointer-events:none}
+.wpt.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
+.wpt .ok{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:11px;background:var(--acc);color:var(--acc-ink);font-size:14px;line-height:22px}
+.wpt .an{position:absolute;top:6px;left:6px;font-size:10px;letter-spacing:.04em;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,.45)}
 .mi.new{background:transparent;border-style:dashed;color:var(--mute)}
 .mi.new svg{color:var(--mute)}
 .mi *{pointer-events:none}
@@ -101,14 +137,14 @@ main{padding:0 16px}
 </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="wp"></div><div id="app"></div>
 <div id="modal"></div>
 <div id="toast"></div>
 <script>
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1011", 10) || 0, UI_NAME = "1.11";
+  var UI_CODE = parseInt("1012", 10) || 0, UI_NAME = "1.12";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -147,7 +183,7 @@ window.MEMO_RH = true;
   function defCat(d) {
     return { id: uid(), name: d[0], notes: [], subs: d[1].map(function (n) { return { id: uid(), name: n, notes: [] }; }) };
   }
-  function defaults() { return { v: 4, fb: [], cats: DEFAULT.map(defCat) }; }
+  function defaults() { return { v: 4, fb: [], wp: "nuit", cats: DEFAULT.map(defCat) }; }
   function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim(); }
   /* Données d'une ancienne version : on garde tout ce qui existe, on ajoute les catégories et sous-catégories qui manquent, on remet l'ordre de la feuille. */
   function migrate(d) {
@@ -185,7 +221,7 @@ window.MEMO_RH = true;
   function parseData(raw) {
     var d = JSON.parse(raw);
     if (!d || !Array.isArray(d.cats)) { throw new Error("format"); }
-    d.fb = Array.isArray(d.fb) ? d.fb : [];
+    d.fb = Array.isArray(d.fb) ? d.fb : []; if (typeof d.wp !== "string") { d.wp = "nuit"; }
     d.cats.forEach(function (c) { c.notes = c.notes || []; c.subs = c.subs || []; c.subs.forEach(function (s) { s.notes = s.notes || []; }); });
     return d;
   }
@@ -290,6 +326,8 @@ window.MEMO_RH = true;
     else if (view.n === "sub") { h = subH(view.id, view.s); }
     else if (view.n === "set") { h = setH(); }
     else if (view.n === "fb") { h = fbH(); }
+    else if (view.n === "autre") { h = autreH(); }
+    else if (view.n === "wp") { h = wpH(); }
     app.innerHTML = h;
     if (view.n === "home") { fillRes(); }
     if (focusSec) {
@@ -334,8 +372,8 @@ window.MEMO_RH = true;
           + (n ? '<span class="bd">' + n + "</span>" : "")
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (IC[rk(c)] || IC[3]) + "</svg><span>" + esc(c.name) + "</span></button>";
       });
-      h += '<button class="mi" style="--c:' + color(8) + '" data-a="fb" aria-label="Feedback, ' + D.fb.length + ' remarque(s)">' + (D.fb.length ? '<span class="bd">' + D.fb.length + "</span>" : "")
-        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + IC[8] + "</svg><span>Feedback</span></button>";
+      h += '<button class="mi" style="--c:hsl(215 18% 62%)" data-a="autre" aria-label="Autre">' + (D.fb.length ? '<span class="bd">' + D.fb.length + "</span>" : "")
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + IC_AUTRE + "</svg><span>Autre</span></button>";
       box.innerHTML = h + '</div><p class="hint" style="margin-top:12px">Appui long sur une catégorie pour la déplacer.</p>'; return;
     }
     D.cats.forEach(function (c) {
@@ -382,12 +420,53 @@ window.MEMO_RH = true;
     h += tile(IC_PLUS, "Sous-thème", null, c.id, "", col, "new", "subadd") + '</div><p class="hint" style="margin-top:12px">Appui long sur un sous-thème pour le déplacer.</p></main>';
     return h;
   }
+  /* ---------- fonds d'écran ---------- */
+  var WPS = [
+    ["nuit", "Nuit", 0, "#0f1114"], ["ocean", "Océan", 0, "linear-gradient(160deg,#0b2447,#19376d 45%,#0a7d9b)"], ["foret", "Forêt", 0, "linear-gradient(160deg,#07140f,#0e3b2b 55%,#1d6b4a)"],
+    ["crep", "Crépuscule", 0, "linear-gradient(170deg,#1a1038,#4a1d6b 45%,#c2410c)"], ["braise", "Braise", 0, "linear-gradient(165deg,#140808,#4a1414 50%,#9a3412)"],
+    ["aurore", "Aurore", 1, "linear-gradient(160deg,#0a0f1c,#22d3a0 55%,#6366f1)"], ["vagues", "Vagues", 1, "linear-gradient(180deg,#0a1a3a,#0e3a66 55%,#38bdf8)"],
+    ["etoiles", "Étoiles", 1, "radial-gradient(ellipse at 50% 120%,#2a3f8a,#070b1a 70%)"], ["bulles", "Bulles", 1, "linear-gradient(180deg,#06222e,#2aa5b8)"],
+    ["spectre", "Spectre", 1, "linear-gradient(120deg,#1e3a8a,#6d28d9,#be185d,#0f766e)"]
+  ];
+  function rnd(i, k) { var x = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); }
+  function wpInner(id) {
+    var h = "", i, W = "M0 100C200 20 400 180 600 100S1000 20 1200 100C1400 20 1600 180 1800 100S2200 20 2400 100V200H0Z";
+    if (id === "aurore") { h = "<i></i><i></i><i></i>"; }
+    else if (id === "vagues") { for (i = 0; i < 3; i++) { h += '<svg viewBox="0 0 2400 200" preserveAspectRatio="none"><path d="' + W + '"/></svg>'; } }
+    else if (id === "etoiles") { for (i = 0; i < 70; i++) { var z = 1 + Math.round(rnd(i, 3) * 2); h += '<i style="left:' + (rnd(i, 1) * 100).toFixed(1) + "%;top:" + (rnd(i, 2) * 100).toFixed(1) + "%;width:" + z + "px;height:" + z + "px;animation-delay:-" + (rnd(i, 4) * 6).toFixed(1) + "s;animation-duration:" + (3 + rnd(i, 5) * 4).toFixed(1) + 's"></i>'; } }
+    else if (id === "bulles") { for (i = 0; i < 16; i++) { var d = 14 + Math.round(rnd(i, 3) * 40); h += '<i style="left:' + (rnd(i, 1) * 96).toFixed(1) + "%;width:" + d + "px;height:" + d + "px;animation-duration:" + (11 + rnd(i, 2) * 14).toFixed(1) + "s;animation-delay:-" + (rnd(i, 4) * 22).toFixed(1) + 's"></i>'; } }
+    return h;
+  }
+  function wpApply() {
+    var el = $("wp"), id = D && D.wp ? D.wp : "nuit", ok = WPS.some(function (w) { return w[0] === id; });
+    if (!el) { return; }
+    if (!ok) { id = "nuit"; }
+    el.className = "wp-" + id; el.innerHTML = wpInner(id);
+  }
+  function wpH() {
+    var h = '<header class="top"><button class="ib txt" data-a="back">‹ Autre</button><h1>Fond d\'écran</h1></header><main>' + banners();
+    [["Fixes", 0], ["Animés", 1]].forEach(function (g) {
+      h += '<div class="libH">' + g[0] + '</div><div class="wpgrid">';
+      WPS.filter(function (w) { return w[2] === g[1]; }).forEach(function (w) {
+        h += '<button class="wpt' + (D.wp === w[0] ? " sel" : "") + '" style="--pv:' + w[3] + '" data-a="wpset" data-w="' + w[0] + '" aria-label="' + w[1] + '">' + (g[1] ? '<span class="an">ANIMÉ</span>' : "") + (D.wp === w[0] ? '<span class="ok">✓</span>' : "") + "<span>" + w[1] + "</span></button>";
+      });
+      h += "</div>";
+    });
+    return h + "</main>";
+  }
+  /* ---------- écran Autre : Feedback et fond d'écran ---------- */
+  var IC_BULB = '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.500 10.900c.6.500 1 1.200 1 2.100h5c0-.900.400-1.600 1-2.100A6 6 0 0 0 12 3z"/>', IC_IMG = '<rect x="3" y="4" width="18" height="16" rx="2.500"/><circle cx="9" cy="10" r="1.800"/><path d="M3 17l5-4.500 4 3.500 3-2.500 6 5"/>', IC_AUTRE = '<rect x="4" y="4" width="6.500" height="6.500" rx="1.500"/><rect x="13.500" y="4" width="6.500" height="6.500" rx="1.500"/><rect x="4" y="13.500" width="6.500" height="6.500" rx="1.500"/><rect x="13.500" y="13.500" width="6.500" height="6.500" rx="1.500"/>';
+  function autreH() {
+    var h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>Autre</h1></header><main>' + banners();
+    h += '<div class="mods m3">' + tile(IC_BULB, "Feedback", D.fb.length, "", "", color(8), "", "fb") + tile(IC_IMG, "Fond d'écran", null, "", "", "hsl(178 60% 48%)", "", "wp") + "</div></main>";
+    return h;
+  }
   /* ---------- écran Feedback : remarques à envoyer à Claude (déposées dans le dépôt GitHub de sauvegarde) ---------- */
   var FBK = { amel: ["À améliorer", "#4dd4ac"], idee: ["Idée", "#ffc53d"], bug: ["Bug", "#ff6b6b"] }, fbDraft = "", fbMsg = "", fbBusy = false;
   function pad(n) { return (n < 10 ? "0" : "") + n; }
   function fbDate(ts) { var d = new Date(ts); return pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + " à " + pad(d.getHours()) + ":" + pad(d.getMinutes()); }
   function fbH() {
-    var h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>Feedback</h1></header><main>' + banners();
+    var h = '<header class="top"><button class="ib txt" data-a="back">‹ Autre</button><h1>Feedback</h1></header><main>' + banners();
     h += '<div class="box"><textarea class="fbt" id="fbT" placeholder="Écris ici une remarque : ce qui va bien, ce qu\'il faut améliorer, une idée, un bug…">' + esc(fbDraft) + "</textarea>"
       + '<div class="fbrow"><span>Ranger la remarque dans :</span><button class="pill" data-a="fbadd" data-k="amel">À améliorer</button><button class="pill" data-a="fbadd" data-k="idee">Idée</button><button class="pill" data-a="fbadd" data-k="bug">Bug</button></div>'
       + '<div class="fbrow"><button class="btn" data-a="fbsend">Envoyer à Claude (' + D.fb.length + ')</button></div>'
@@ -460,7 +539,7 @@ window.MEMO_RH = true;
     a = t.getAttribute("data-a"); c = t.getAttribute("data-c") || ""; s = t.getAttribute("data-s") || ""; n = t.getAttribute("data-n") || "";
     if (a === "open") { view = { n: "cat", id: c }; query = ""; render(); window.scrollTo(0, 0); }
     else if (a === "opensub") { view = { n: "sub", id: c, s: s }; query = ""; render(); window.scrollTo(0, 0); }
-    else if (a === "back") { view = view.n === "sub" ? { n: "cat", id: view.id } : { n: "home" }; render(); window.scrollTo(0, 0); }
+    else if (a === "back") { view = view.n === "sub" ? { n: "cat", id: view.id } : (view.n === "fb" || view.n === "wp") ? { n: "autre" } : { n: "home" }; render(); window.scrollTo(0, 0); }
     else if (a === "set") { view = { n: "set" }; render(); window.scrollTo(0, 0); }
     else if (a === "reload") { post("reloadUi", []); }
     else if (a === "tog") { list = notesOf(c, s); i = list ? findNote(list, n) : -1; if (i >= 0) { list[i].done = !list[i].done; save(); render(); } }
@@ -521,6 +600,9 @@ window.MEMO_RH = true;
         } }] });
     }
     else if (a === "upd") { updCheck(true); }
+    else if (a === "autre") { view = { n: "autre" }; render(); window.scrollTo(0, 0); }
+    else if (a === "wp") { view = { n: "wp" }; render(); window.scrollTo(0, 0); }
+    else if (a === "wpset") { if (locked) { return toast("Impossible tant que l'avertissement rouge est affiché.", true); } D.wp = t.getAttribute("data-w") || "nuit"; save(); wpApply(); render(); }
     else if (a === "fb") { view = { n: "fb" }; render(); window.scrollTo(0, 0); }
     else if (a === "fbadd") {
       var ft = $("fbT"), tx = (ft ? ft.value : fbDraft).trim();
@@ -701,6 +783,7 @@ window.MEMO_RH = true;
   window.addEventListener("pagehide", function () { save(); });
 
   load();
+  wpApply();
   render();
 })();
 </script>
