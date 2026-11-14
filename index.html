@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1021 TDBA:5-->
+<!--TDBV:1022 TDBA:5-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -112,6 +112,10 @@ main{padding:0 16px}
 .res{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
 .res button{display:block;width:100%;text-align:left;padding:10px 16px;border-top:1px solid var(--line);overflow-wrap:anywhere}
 .res button:first-child{border-top:0}
+.res .rrow{display:flex;align-items:center;border-top:1px solid var(--line)}
+.res .rrow:first-child{border-top:0}
+.res .rrow button.ro{flex:1;border-top:0}
+.res .rrow .xdel{flex:none;width:52px;height:52px;margin:0;padding:0;border-top:0;text-align:center}
 .res small{display:block;color:var(--mute);font-size:13px}
 .hint{color:var(--mute);font-size:14px;margin:0 2px 10px}
 .banner{margin:0 0 12px;background:var(--acc);color:var(--acc-ink);border-radius:12px;padding:12px 14px;font-weight:600;display:flex;gap:10px;align-items:center;justify-content:space-between}
@@ -149,7 +153,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1021", 10) || 0, UI_NAME = "1.21";
+  var UI_CODE = parseInt("1022", 10) || 0, UI_NAME = "1.22";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -396,7 +400,7 @@ window.MEMO_RH = true;
     if (!found.length) { box.innerHTML = '<p class="hint">Aucune note ne contient « ' + esc(query.trim()) + " ».</p>"; return; }
     h = '<div class="res">';
     found.slice(0, 60).forEach(function (f) {
-      h += '<button data-a="opensub" data-c="' + f.c.id + '" data-s="' + (f.s ? f.s.id : "") + '">' + esc(f.n.t) + "<small>" + esc(f.c.name) + (f.s ? " › " + esc(f.s.name) : "") + (f.n.done ? " · terminée" : "") + "</small></button>";
+      h += '<div class="rrow"><button class="ro" data-a="opensub" data-c="' + f.c.id + '" data-s="' + (f.s ? f.s.id : "") + '">' + esc(f.n.t) + "<small>" + esc(f.c.name) + (f.s ? " › " + esc(f.s.name) : "") + (f.n.done ? " · terminée" : "") + '</small></button><button class="xdel" data-a="delnote" data-c="' + f.c.id + '" data-s="' + (f.s ? f.s.id : "") + '" data-n="' + f.n.id + '" aria-label="Supprimer la note">×</button></div>';
     });
     box.innerHTML = h + "</div>";
   }
