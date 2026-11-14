@@ -67,6 +67,9 @@ final class MainViewController: UIViewController, WKNavigationDelegate, WKUIDele
         case "ota.begin": Ota.begin(); return "ok"
         case "ota.chunk": Ota.chunk(first); return "ok"
         case "ota.commit": return Ota.commit(versionJson: first)
+        case "bk.status": return Backup.status()
+        case "bk.set": return Backup.configure(repo: first, token: a.count > 1 ? ((a[1] as? String) ?? "") : "")
+        case "bk.forget": return Backup.forget()
         default: return "err:appel inconnu"
         }
     }
@@ -77,6 +80,12 @@ final class MainViewController: UIViewController, WKNavigationDelegate, WKUIDele
         switch m {
         case "reloadUi":
             loadPage()
+        case "backupRun":
+            let manual = (a.first as? NSNumber)?.boolValue ?? false
+            Backup.run(manual: manual) { [weak self] result in
+                let js = "window.__bk(\(Self.literal(result)))"
+                DispatchQueue.main.async { self?.webView.evaluateJavaScript(js, completionHandler: nil) }
+            }
         case "httpGet":
             guard a.count >= 3, let id = (a[0] as? NSNumber)?.intValue else { return }
             httpGet(id: id, urlString: (a[1] as? String) ?? "", headers: (a[2] as? [String: Any]) ?? [:])

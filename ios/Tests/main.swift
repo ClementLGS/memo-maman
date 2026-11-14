@@ -23,6 +23,24 @@ check("notes valides acceptées", Store.valid("{\"v\":1,\"cats\":[]}"))
 check("texte quelconque refusé", !Store.valid("n'importe quoi") && !Store.valid("") && !Store.valid("[]"))
 check("objet sans cats refusé", !Store.valid("{\"v\":1}") && !Store.valid("{\"cats\":3}"))
 
+
+// Sauvegarde GitHub : format du dépôt, quand sauvegarder, corps de la requête
+check("dépôt valide", Backup.validRepo("ClementLGS/memo-maman-sauvegardes") && Backup.validRepo("a.b/c_d-e"))
+check("dépôt invalide refusé", !Backup.validRepo("") && !Backup.validRepo("sans-barre") && !Backup.validRepo("a/b/c") && !Backup.validRepo("a b/c") && !Backup.validRepo("https://github.com/a/b"))
+check("non configuré : pas de sauvegarde", Backup.skipReason(configured: false, hash: "h", lastHash: nil, lastTs: 0, now: 10, manual: true) == "skip:non configuré")
+check("première sauvegarde : tout de suite", Backup.skipReason(configured: true, hash: "h", lastHash: nil, lastTs: 0, now: 10, manual: false) == nil)
+check("notes inchangées : rien à faire", Backup.skipReason(configured: true, hash: "h", lastHash: "h", lastTs: 0, now: 99999, manual: false) == "skip:à jour")
+check("notes changées depuis moins d'une heure : attente", Backup.skipReason(configured: true, hash: "h2", lastHash: "h", lastTs: 1000, now: 1000 + 600, manual: false) == "skip:attente")
+check("notes changées depuis plus d'une heure : sauvegarde", Backup.skipReason(configured: true, hash: "h2", lastHash: "h", lastTs: 1000, now: 1000 + 3700, manual: false) == nil)
+check("à la demande : toujours", Backup.skipReason(configured: true, hash: "h", lastHash: "h", lastTs: 1000, now: 1001, manual: true) == nil)
+if let b = Backup.putBody(message: "m", content: Data("{\"cats\":[]}".utf8), sha: "abc"),
+   let o = try? JSONSerialization.jsonObject(with: b) as? [String: Any] {
+    check("corps de requête : contenu en base64 + sha", o["sha"] as? String == "abc" && o["message"] as? String == "m" && o["content"] as? String == Data("{\"cats\":[]}".utf8).base64EncodedString())
+} else { check("corps de requête lisible", false) }
+if let b = Backup.putBody(message: "m", content: Data("x".utf8), sha: nil), let o = try? JSONSerialization.jsonObject(with: b) as? [String: Any] {
+    check("corps de requête sans sha (premier envoi)", o["sha"] == nil)
+}
+
 // version.json du dépôt = index.html du dépôt (sinon l'appli refuserait la mise à jour : empreinte différente)
 let argv = CommandLine.arguments
 if argv.count >= 3, let vjText = try? String(contentsOfFile: argv[1], encoding: .utf8), let htmlData = try? Data(contentsOf: URL(fileURLWithPath: argv[2])),

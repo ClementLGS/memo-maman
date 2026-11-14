@@ -1,7 +1,7 @@
-# Mémo RH
+# Prise de notes Ciolek
 
 Pense-bête pour iPhone : 7 catégories, des sous-thèmes, des notes à cocher. Les notes restent **sur le téléphone**
-(fichier `memo-rh.json`, visible dans Fichiers > Sur mon iPhone > Mémo RH). Ce dépôt ne contient que l'interface et le code de l'appli : **aucune note, aucun secret**.
+(fichier `memo-rh.json`, visible dans Fichiers > Sur mon iPhone > Prise de notes Ciolek). Ce dépôt ne contient que l'interface et le code de l'appli : **aucune note, aucun secret**.
 
 - `index.html` : toute l'interface (HTML + CSS + JS).
 - `version.json` : numéro et empreinte de l'interface (écrit par `python3 tools/version.py`).

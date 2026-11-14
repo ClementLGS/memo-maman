@@ -30,7 +30,7 @@ jobs:
 
       - name: Tests (contrôle des mises à jour, stockage, version.json)
         run: |
-          swiftc -o /tmp/memotest ios/MemoRH/Sources/Hash.swift ios/MemoRH/Sources/Store.swift ios/MemoRH/Sources/Ota.swift ios/Tests/main.swift
+          swiftc -o /tmp/memotest ios/MemoRH/Sources/Hash.swift ios/MemoRH/Sources/Store.swift ios/MemoRH/Sources/Ota.swift ios/MemoRH/Sources/Keychain.swift ios/MemoRH/Sources/Backup.swift ios/Tests/main.swift
           /tmp/memotest version.json index.html
 
       - name: Copier l'interface (index.html de la branche)
@@ -84,5 +84,5 @@ jobs:
           VER=$(python3 -c "import json;print(json.load(open('version.json'))['name'])")
           gh release create "compil${{ github.run_number }}" "ios/${IPA_NAME}.ipa" \
             --repo "${{ github.repository }}" --target "${{ github.sha }}" --latest \
-            --title "Mémo RH ${VER} (compil ${{ github.run_number }})" \
+            --title "Prise de notes Ciolek ${VER} (compil ${{ github.run_number }})" \
             --notes "IPA non signé, à installer avec Sideloadly. Interface ${VER}."
