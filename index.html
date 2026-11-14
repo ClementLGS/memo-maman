@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1009 TDBA:3-->
+<!--TDBV:1010 TDBA:3-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -99,7 +99,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1009", 10) || 0, UI_NAME = "1.9";
+  var UI_CODE = parseInt("1010", 10) || 0, UI_NAME = "1.10";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -382,12 +382,10 @@ window.MEMO_RH = true;
         + '<div class="row"><button class="btn" data-a="bkset">Enregistrer</button><button class="btn sec2" data-a="bknow">Sauvegarder maintenant</button></div>'
         + (i.token ? '<div class="row"><button class="btn sec2" data-a="bkforget">Supprimer le jeton</button></div>' : "")
         : "<p>Disponible dans l'appli installée.</p>") + "</div>";
-    h += '<div class="box"><h3>Copie manuelle</h3><p>Tes notes sont aussi enregistrées sur ce téléphone, dans Fichiers > Sur mon iPhone > Prise de notes Ciolek. Tu peux copier le texte ci-dessous pour le garder ailleurs (mail, Notes…).</p>'
-      + '<textarea id="bk" readonly>' + esc(json) + '</textarea><div class="row"><button class="btn" data-a="copy">Copier</button><button class="btn sec2" data-a="restore">Restaurer…</button></div></div>';
     h += '<div class="box"><h3>Mises à jour</h3><p>Version ' + esc(UI_NAME) + (NATIVE ? "" : " (aperçu navigateur)") + ". L'appli cherche seule les nouvelles versions sur GitHub, à l'ouverture puis toutes les 6 heures.</p>"
       + '<input class="fld" id="updSrc" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="' + esc(srcStr(REPO)) + '" value="' + esc(D.upd || "") + '">'
       + '<div class="row"><button class="btn sec2" data-a="cfgimp">Importer reglages.txt</button></div><div class="row"><button class="btn" data-a="upd">Chercher une mise à jour</button><button class="btn sec2" data-a="updsave">Changer la source</button></div>'
-      + '<p style="margin:10px 0 0;color:var(--acc)">✓ Mise à jour test 1.7 reçue : si tu vois cette ligne, les mises à jour à distance fonctionnent.</p><p id="updmsg" style="margin:10px 0 0">' + esc(updMsg) + '</p><p style="margin:6px 0 0">Source actuelle : ' + esc(srcStr(srcOf())) + "</p></div>";
+      + '<p id="updmsg" style="margin:10px 0 0">' + esc(updMsg) + '</p><p style="margin:6px 0 0">Source actuelle : ' + esc(srcStr(srcOf())) + "</p></div>";
     return h + "</main>";
   }
 
