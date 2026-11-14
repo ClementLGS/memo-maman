@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1005 TDBA:2-->
+<!--TDBV:1006 TDBA:3-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -95,7 +95,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1005", 10) || 0, UI_NAME = "1.5";
+  var UI_CODE = parseInt("1006", 10) || 0, UI_NAME = "1.6";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -371,7 +371,7 @@ window.MEMO_RH = true;
       + '<textarea id="bk" readonly>' + esc(json) + '</textarea><div class="row"><button class="btn" data-a="copy">Copier</button><button class="btn sec2" data-a="restore">Restaurer…</button></div></div>';
     h += '<div class="box"><h3>Mises à jour</h3><p>Version ' + esc(UI_NAME) + (NATIVE ? "" : " (aperçu navigateur)") + ". L'appli cherche seule les nouvelles versions sur GitHub, à l'ouverture puis toutes les 6 heures.</p>"
       + '<input class="fld" id="updSrc" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="' + esc(srcStr(REPO)) + '" value="' + esc(D.upd || "") + '">'
-      + '<div class="row"><button class="btn" data-a="upd">Chercher une mise à jour</button><button class="btn sec2" data-a="updsave">Changer la source</button></div>'
+      + '<div class="row"><button class="btn sec2" data-a="cfgimp">Importer reglages.txt</button></div><div class="row"><button class="btn" data-a="upd">Chercher une mise à jour</button><button class="btn sec2" data-a="updsave">Changer la source</button></div>'
       + '<p id="updmsg" style="margin:10px 0 0">' + esc(updMsg) + '</p><p style="margin:6px 0 0">Source actuelle : ' + esc(srcStr(srcOf())) + "</p></div>";
     return h + "</main>";
   }
@@ -447,6 +447,7 @@ window.MEMO_RH = true;
         } }] });
     }
     else if (a === "upd") { updCheck(true); }
+    else if (a === "cfgimp") { cfgImport(true); }
     else if (a === "updsave") {
       var us = $("updSrc"), v = us ? us.value.trim() : "";
       if (v && !parseSrc(v)) { return toast("Format attendu : propriétaire/nom ou propriétaire/nom@branche", true); }
@@ -474,6 +475,23 @@ window.MEMO_RH = true;
       e.preventDefault(); addNote(k[0], k[1] || "", t.value);
     }
   });
+
+  /* ---------- fichier de réglages (reglages.txt déposé dans Fichiers) ---------- */
+  function cfgImport(manual) {
+    if (!NATIVE || locked) { return; }
+    var r = sync("cfg.import", []), p;
+    if (r === "none") { if (manual) { toast("Aucun fichier reglages.txt trouvé dans Fichiers > Sur mon iPhone > Prise de notes Ciolek.", true); } return; }
+    if (r.indexOf("err:") === 0) { toast("Réglages : " + r.slice(4), true); return; }
+    if (r.indexOf("ok:") !== 0) { return; }
+    p = r.slice(3).split("|");
+    if (p[0]) { D.upd = p[0]; save(); }
+    toast("Réglages importés" + (p[1] ? " · sauvegarde GitHub configurée" : "") + (p[0] ? " · source de mise à jour modifiée" : "") + ". Le fichier a été supprimé.");
+    bkErr = ""; bkMsg = "";
+    render();
+    if (p[1] || p[2] === "1") { bkRun(true); }
+  }
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { cfgImport(false); } });
+  setTimeout(function () { cfgImport(false); }, 600);
 
   /* ---------- sauvegarde GitHub (le travail est fait par l'appli native) ---------- */
   function bkRun(manual) { if (NATIVE) { post("backupRun", [!!manual]); } }

@@ -41,6 +41,17 @@ if let b = Backup.putBody(message: "m", content: Data("x".utf8), sha: nil), let 
     check("corps de requête sans sha (premier envoi)", o["sha"] == nil)
 }
 
+// Fichier de réglages
+let cfgTxt = "\u{FEFF}# commentaire\nmise_a_jour = ClementLGS/memo-maman\nSauvegarde_Depot = \"Clem/notes-sauv\"\nsauvegarde_jeton = github_pat_ABC=def\ninconnu = x\n"
+let cfgV = Config.parse(cfgTxt)
+check("réglages : valeurs lues (BOM, guillemets, casse, = dans le jeton)", cfgV == Config.Values(update: "ClementLGS/memo-maman", backupRepo: "Clem/notes-sauv", token: "github_pat_ABC=def"))
+check("réglages : exemples du modèle ignorés", Config.parse("sauvegarde_depot = votre-compte/votre-depot\nsauvegarde_jeton = colle_ici_le_jeton\n") == Config.Values())
+check("réglages : fichier valide accepté", Config.problem(cfgV) == nil)
+check("réglages : fichier vide refusé", Config.problem(Config.Values()) != nil)
+check("réglages : dépôt invalide refusé", Config.problem(Config.Values(update: "", backupRepo: "pas bon", token: "x")) != nil)
+check("réglages : source de mise à jour invalide refusée", Config.problem(Config.Values(update: "a b", backupRepo: "", token: "")) != nil)
+check("réglages : branche acceptée", Config.problem(Config.Values(update: "a/b@dev", backupRepo: "", token: "")) == nil)
+
 // version.json du dépôt = index.html du dépôt (sinon l'appli refuserait la mise à jour : empreinte différente)
 let argv = CommandLine.arguments
 if argv.count >= 3, let vjText = try? String(contentsOfFile: argv[1], encoding: .utf8), let htmlData = try? Data(contentsOf: URL(fileURLWithPath: argv[2])),

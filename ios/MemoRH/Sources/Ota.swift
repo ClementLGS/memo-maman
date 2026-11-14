@@ -5,7 +5,7 @@ import Foundation
 /// (qui contrôle le dépôt GitHub peut changer l'interface : ne jamais y mettre de donnée, les notes restent sur le téléphone).
 enum Ota {
     /// Niveau du pont natif : une interface qui exige plus (marqueur TDBA) est refusée plutôt que d'être cassée.
-    static let bridgeLevel = 2
+    static let bridgeLevel = 3
 
     private static let defaults = UserDefaults.standard
     private static let buildKey = "memorh.ota.build"

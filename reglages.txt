@@ -1,0 +1,18 @@
+# ===== RÉGLAGES DE "PRISE DE NOTES CIOLEK" =====
+# Remplis ce fichier sur ton ordinateur (Bloc-notes), enregistre-le sous le nom reglages.txt
+# (texte brut, UTF-8), puis mets-le dans Fichiers > Sur mon iPhone > Prise de notes Ciolek.
+# À la prochaine ouverture de l'appli, les réglages sont remplis automatiquement
+# et le fichier est SUPPRIMÉ du téléphone (il contient ton jeton : ne le laisse pas traîner).
+# Une ligne laissée vide ou avec l'exemple d'origine est ignorée (le réglage actuel est gardé).
+
+# --- Mises à jour de l'appli (laisser tel quel pour garder le dépôt par défaut) ---
+# Format : propriétaire/nom   ou   propriétaire/nom@branche
+mise_a_jour = ClementLGS/memo-maman
+
+# --- Sauvegarde des notes sur GitHub ---
+# Dépôt PRIVÉ qui recevra le fichier notes.json. Format : propriétaire/nom
+sauvegarde_depot = votre-compte/votre-depot
+
+# Jeton GitHub "fine-grained" limité à ce dépôt, droit "Contents : Read and write"
+# (GitHub > Settings > Developer settings > Personal access tokens > Fine-grained tokens)
+sauvegarde_jeton = colle_ici_le_jeton

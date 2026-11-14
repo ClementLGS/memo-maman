@@ -30,7 +30,7 @@ jobs:
 
       - name: Tests (contrôle des mises à jour, stockage, version.json)
         run: |
-          swiftc -o /tmp/memotest ios/MemoRH/Sources/Hash.swift ios/MemoRH/Sources/Store.swift ios/MemoRH/Sources/Ota.swift ios/MemoRH/Sources/Keychain.swift ios/MemoRH/Sources/Backup.swift ios/Tests/main.swift
+          swiftc -o /tmp/memotest ios/MemoRH/Sources/Hash.swift ios/MemoRH/Sources/Store.swift ios/MemoRH/Sources/Ota.swift ios/MemoRH/Sources/Keychain.swift ios/MemoRH/Sources/Backup.swift ios/MemoRH/Sources/Config.swift ios/Tests/main.swift
           /tmp/memotest version.json index.html
 
       - name: Copier l'interface (index.html de la branche)

@@ -67,6 +67,7 @@ final class MainViewController: UIViewController, WKNavigationDelegate, WKUIDele
         case "ota.begin": Ota.begin(); return "ok"
         case "ota.chunk": Ota.chunk(first); return "ok"
         case "ota.commit": return Ota.commit(versionJson: first)
+        case "cfg.import": return Config.importFile()
         case "bk.status": return Backup.status()
         case "bk.set": return Backup.configure(repo: first, token: a.count > 1 ? ((a[1] as? String) ?? "") : "")
         case "bk.forget": return Backup.forget()

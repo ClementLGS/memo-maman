@@ -29,3 +29,7 @@ Un nouvel IPA n'est nécessaire que si le code Swift change (ou tous les 7 jours
 - Rien n'a encore tourné sur un vrai iPhone : stockage, mise à jour automatique et clavier sont à vérifier au premier essai.
 - Mises à jour non signées : `uisha` détecte un fichier abîmé, pas un fichier malveillant. Acceptable ici parce que l'appli ne contient aucune donnée sensible ; la page ne peut contacter que `api.github.com` et `raw.githubusercontent.com`.
 - Pas de rappels/notifications, pas de synchronisation entre appareils : les notes vivent sur un seul téléphone (sauvegarde : copier/coller dans Réglages, ou fichier dans Fichiers).
+
+## Fichier de réglages
+
+`reglages.txt` (modèle à la racine du dépôt) : à remplir sur le PC et à déposer dans Fichiers > Sur mon iPhone > Prise de notes Ciolek. L'appli le lit à l'ouverture, remplit les réglages (source de mise à jour, dépôt et jeton de sauvegarde GitHub) puis le supprime.
