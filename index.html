@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1007 TDBA:3-->
+<!--TDBV:1008 TDBA:3-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -19,24 +19,26 @@ input,textarea{font:inherit;font-size:16px;color:var(--ink)}
 header.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--bg)}
 header.top h1.long{font-size:23px}
 header.top h1{flex:1;margin:0;font-size:26px;letter-spacing:-.4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ib{min-width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--acc)}
-.ib.txt{font-size:17px;padding:0 6px;justify-content:flex-start}
+.ib{min-width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:34px;line-height:1;color:var(--acc)}
+.ib.txt{font-size:20px;padding:0 6px;justify-content:flex-start}
 main{padding:0 16px}
 .search{width:100%;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 14px;margin:2px 0 14px;outline:none}
 .libH{padding:2px 4px 10px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
-.mods{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.mi{position:relative;aspect-ratio:1/1;min-width:0;border-radius:16px;border:2px solid var(--line);padding:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;background:var(--card);box-shadow:var(--shadow);font-size:11.5px;font-weight:700;color:var(--ink);text-align:center;overflow-wrap:normal;line-height:1.15}
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mi{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;position:relative;aspect-ratio:1/1;min-width:0;border-radius:16px;border:2px solid var(--line);padding:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:var(--card);box-shadow:var(--shadow);font-size:14px;font-weight:700;color:var(--ink);text-align:center;overflow-wrap:normal;line-height:1.15}
 .mi:active{background:rgba(255,255,255,.08)}
 .mods.m3{grid-template-columns:repeat(3,1fr);gap:10px}
-.m3 .mi{font-size:14px;padding:24px 8px 6px;gap:8px;justify-content:flex-start}
+.m3 .mi{font-size:14px;padding:30px 6px 6px;gap:8px;justify-content:flex-start}
 .m3 .mi span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:break-word}
-.m3 .mi svg{width:32px;height:32px}
-.m3 .mi .bd{top:7px;right:7px;min-width:22px;height:22px;border-radius:11px;font-size:12px}
+.m3 .mi svg{width:46px;height:46px}
+.m3 .mi .bd{top:7px;right:7px;min-width:24px;height:24px;border-radius:12px;font-size:13px}
+.mi.ph{opacity:.3}
+.dragclone{position:fixed;z-index:50;margin:0;pointer-events:none;transform:scale(1.07);opacity:.92;box-shadow:0 14px 30px rgba(0,0,0,.55)}
 .mi.new{background:transparent;border-style:dashed;color:var(--mute)}
 .mi.new svg{color:var(--mute)}
 .mi *{pointer-events:none}
-.mi svg{width:30px;height:30px;display:block;color:var(--c)}
-.mi .bd{position:absolute;top:5px;right:5px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--c);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.mi svg{width:48px;height:48px;display:block;color:var(--c)}
+.mi .bd{position:absolute;top:6px;right:6px;min-width:24px;height:24px;padding:0 6px;border-radius:12px;background:var(--c);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
 .sec{background:var(--card);border:1px solid var(--line);border-radius:16px;margin:0 0 14px;box-shadow:var(--shadow);overflow:hidden}
 .sec .sh{display:flex;align-items:center;padding:4px 6px 4px 14px;min-height:48px}
 .sec .sh h2{flex:1;margin:0;font-size:16px;text-transform:none;letter-spacing:0;color:var(--c,var(--ink))}
@@ -95,7 +97,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1007", 10) || 0, UI_NAME = "1.7";
+  var UI_CODE = parseInt("1008", 10) || 0, UI_NAME = "1.8";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -298,11 +300,11 @@ window.MEMO_RH = true;
       h = '<div class="libH">Catégories</div><div class="mods">';
       D.cats.forEach(function (c, i) {
         var n = catOpen(c);
-        h += '<button class="mi" style="--c:' + color(i) + '" data-a="open" data-c="' + c.id + '" aria-label="' + esc(c.name) + ", " + n + ' à faire">'
+        h += '<button class="mi" data-ro="1" style="--c:' + color(i) + '" data-a="open" data-c="' + c.id + '" aria-label="' + esc(c.name) + ", " + n + ' à faire">'
           + (n ? '<span class="bd">' + n + "</span>" : "")
           + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (IC[i] || IC[3]) + "</svg><span>" + esc(c.name) + "</span></button>";
       });
-      box.innerHTML = h + "</div>"; return;
+      box.innerHTML = h + '</div><p class="hint" style="margin-top:12px">Appui long sur une catégorie pour la déplacer.</p>'; return;
     }
     D.cats.forEach(function (c) {
       c.notes.forEach(function (n) { if (n.t.toLowerCase().indexOf(q) >= 0) { found.push({ c: c, s: null, n: n }); } });
@@ -335,16 +337,16 @@ window.MEMO_RH = true;
     return h;
   }
   var IC_NOTE = '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>', IC_DOC = '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>', IC_PLUS = '<path d="M12 5v14M5 12h14"/>';
-  function tile(icon, label, n, c, s, col, cls, act) {
-    return '<button class="mi' + (cls ? " " + cls : "") + '" style="--c:' + col + '" data-a="' + act + '" data-c="' + c + '" data-s="' + s + '" aria-label="' + esc(label) + (n === null ? "" : ", " + n + " à faire") + '">'
+  function tile(icon, label, n, c, s, col, cls, act, ro) {
+    return '<button class="mi' + (cls ? " " + cls : "") + '"' + (ro ? ' data-ro="1"' : "") + ' style="--c:' + col + '" data-a="' + act + '" data-c="' + c + '" data-s="' + s + '" aria-label="' + esc(label) + (n === null ? "" : ", " + n + " à faire") + '">'
       + (n ? '<span class="bd">' + n + "</span>" : "")
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + icon + "</svg><span>" + esc(label) + "</span></button>";
   }
   function catH(c) {
     var col = color(D.cats.indexOf(c)), h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>' + esc(c.name) + '</h1><button class="ib" data-a="catmenu" data-c="' + c.id + '" aria-label="Options">⋯</button></header><main>' + banners();
     h += '<div class="mods m3">' + tile(IC_NOTE, "Notes", openCount(c.notes), c.id, "", col, "", "opensub");
-    c.subs.forEach(function (s) { h += tile(IC_DOC, s.name, openCount(s.notes), c.id, s.id, col, "", "opensub"); });
-    h += tile(IC_PLUS, "Sous-thème", null, c.id, "", col, "new", "subadd") + "</div></main>";
+    c.subs.forEach(function (s) { h += tile(IC_DOC, s.name, openCount(s.notes), c.id, s.id, col, "", "opensub", 1); });
+    h += tile(IC_PLUS, "Sous-thème", null, c.id, "", col, "new", "subadd") + '</div><p class="hint" style="margin-top:12px">Appui long sur un sous-thème pour le déplacer.</p></main>';
     return h;
   }
   function bkInfo() {
@@ -464,6 +466,61 @@ window.MEMO_RH = true;
     else if (a === "bknow") { bkMsg = "Envoi en cours…"; var m = $("bkmsg"); if (m) { m.textContent = bkMsg; } bkRun(true); }
     else if (a === "bkforget") { sync("bk.forget", []); bkErr = ""; bkMsg = "Jeton supprimé : la sauvegarde GitHub est arrêtée."; render(); }
   }
+  /* ---------- réorganiser par appui long ---------- */
+  var press = null, drag = null, noClick = 0;
+  function roTiles(box) { return Array.prototype.slice.call(box.querySelectorAll(".mi[data-ro]")); }
+  function dragBegin() {
+    var t = press && press.t; if (!t || !t.parentNode) { press = null; return; }
+    var rc = t.getBoundingClientRect(), cl = t.cloneNode(true);
+    cl.className += " dragclone"; cl.style.width = rc.width + "px"; cl.style.height = rc.height + "px"; cl.style.left = rc.left + "px"; cl.style.top = rc.top + "px";
+    document.body.appendChild(cl);
+    t.className += " ph";
+    drag = { t: t, box: t.parentNode, cl: cl, dx: press.x - rc.left, dy: press.y - rc.top };
+    press = null;
+  }
+  function dragMove(x, y) {
+    var list, i, rc, o;
+    drag.cl.style.left = (x - drag.dx) + "px"; drag.cl.style.top = (y - drag.dy) + "px";
+    list = roTiles(drag.box);
+    for (i = 0; i < list.length; i++) {
+      if (list[i] === drag.t) { continue; }
+      rc = list[i].getBoundingClientRect();
+      if (x >= rc.left && x <= rc.right && y >= rc.top && y <= rc.bottom) {
+        o = list.indexOf(drag.t);
+        if (o < i) { drag.box.insertBefore(drag.t, list[i].nextSibling); } else { drag.box.insertBefore(drag.t, list[i]); }
+        return;
+      }
+    }
+  }
+  function dragEnd() {
+    var d = drag, ids, arr, out = [], i, j;
+    drag = null; noClick = Date.now();
+    if (!d) { return; }
+    if (d.cl.parentNode) { d.cl.parentNode.removeChild(d.cl); }
+    ids = roTiles(d.box).map(function (el) { return el.getAttribute("data-s") || el.getAttribute("data-c"); });
+    if (view.n === "home") { arr = D.cats; } else { var cc = cat(view.id); arr = cc ? cc.subs : null; }
+    if (arr && !locked) {
+      for (i = 0; i < ids.length; i++) { for (j = 0; j < arr.length; j++) { if (arr[j].id === ids[i]) { out.push(arr[j]); } } }
+      if (out.length === arr.length) { arr.splice.apply(arr, [0, arr.length].concat(out)); save(); }
+    }
+    render();
+  }
+  document.addEventListener("pointerdown", function (e) {
+    var t = e.target.closest ? e.target.closest(".mi[data-ro]") : null;
+    if (!t || drag || (e.pointerType === "mouse" && e.button !== 0)) { return; }
+    clearTimeout(press && press.timer);
+    press = { t: t, x: e.clientX, y: e.clientY, timer: setTimeout(dragBegin, 450) };
+  });
+  document.addEventListener("pointermove", function (e) {
+    if (drag) { dragMove(e.clientX, e.clientY); return; }
+    if (press && (Math.abs(e.clientX - press.x) > 10 || Math.abs(e.clientY - press.y) > 10)) { clearTimeout(press.timer); press = null; }
+  });
+  function pressEnd() { if (press) { clearTimeout(press.timer); press = null; } if (drag) { dragEnd(); } }
+  document.addEventListener("pointerup", pressEnd);
+  document.addEventListener("pointercancel", pressEnd);
+  document.addEventListener("touchmove", function (e) { if (drag) { e.preventDefault(); } }, { passive: false });
+  document.addEventListener("contextmenu", function (e) { if (e.target.closest && e.target.closest(".mi")) { e.preventDefault(); } });
+  document.addEventListener("click", function (e) { if (Date.now() - noClick < 500) { e.stopPropagation(); e.preventDefault(); } }, true);
   document.addEventListener("click", onClick);
   document.addEventListener("input", function (e) {
     if (e.target && e.target.id === "q") { query = e.target.value; fillRes(); }
