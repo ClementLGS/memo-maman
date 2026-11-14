@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1015 TDBA:4-->
+<!--TDBV:1016 TDBA:4-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -52,6 +52,22 @@ main{padding:0 16px}
 .wpt.sel{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
 .wpt .ok{z-index:2;position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:11px;background:var(--acc);color:var(--acc-ink);font-size:14px;line-height:22px}
 .wpt .an{z-index:2;position:absolute;top:6px;left:6px;font-size:10px;letter-spacing:.04em;padding:2px 6px;border-radius:8px;background:rgba(0,0,0,.45)}
+/* ---- ordinateur : colonne centrée, tuiles de taille fixe ---- */
+@media (min-width:700px){
+  #app{max-width:900px;margin:0 auto}
+  header.top{padding:22px 16px 14px}
+  header.top h1{font-size:30px}
+  .search{max-width:520px}
+  .mods,.mods.m3{grid-template-columns:repeat(auto-fill,150px);gap:14px;justify-content:start}
+  .wpgrid{grid-template-columns:repeat(auto-fill,150px);gap:14px;justify-content:start}
+  .mi,.m3 .mi{font-size:15px}
+  .mi svg,.m3 .mi svg{width:46px;height:46px}
+  .box{max-width:620px}
+  .fbi{max-width:620px}
+  #modal{align-items:center}
+  #modal .sheet{max-width:480px;border-radius:18px}
+  .mi:hover,.wpt:hover,.pill:hover,.btn:hover{filter:brightness(1.15)}
+}
 .mi.new{background:transparent;border-style:dashed;color:var(--mute)}
 .mi.new svg{color:var(--mute)}
 .mi *{pointer-events:none}
@@ -126,7 +142,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1015", 10) || 0, UI_NAME = "1.15";
+  var UI_CODE = parseInt("1016", 10) || 0, UI_NAME = "1.16";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
