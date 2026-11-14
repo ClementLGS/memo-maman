@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1020 TDBA:5-->
+<!--TDBV:1021 TDBA:5-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -21,6 +21,10 @@ header.top{position:relative;z-index:5;display:flex;align-items:center;gap:10px;
 header.top h1.long{font-size:23px}
 header.top h1{flex:1;margin:0;font-size:26px;letter-spacing:-.4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ib{min-width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:34px;line-height:1;color:var(--acc)}
+.ib svg{width:30px;height:30px;pointer-events:none}
+.ib.spin svg{animation:spn 1s linear infinite}
+@keyframes spn{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ib.spin svg{animation:none;opacity:.5}}
 .ib.txt{font-size:20px;padding:0 6px;justify-content:flex-start}
 main{padding:0 16px}
 .search{width:100%;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 14px;margin:2px 0 14px;outline:none}
@@ -145,7 +149,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1020", 10) || 0, UI_NAME = "1.20";
+  var UI_CODE = parseInt("1021", 10) || 0, UI_NAME = "1.21";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -354,7 +358,7 @@ window.MEMO_RH = true;
     return h;
   }
   function homeH() {
-    var h = '<header class="top"><h1 class="long">Prise de notes Ciolek</h1><button class="ib" data-a="set" aria-label="Réglages">⚙︎</button></header><main>' + banners();
+    var h = '<header class="top"><h1 class="long">Prise de notes Ciolek</h1><button class="ib" data-a="syncbtn" aria-label="Synchroniser">' + SYNCIC + '</button><button class="ib" data-a="set" aria-label="Réglages">⚙︎</button></header><main>' + banners();
     h += '<input class="search" id="q" type="search" placeholder="Rechercher dans les notes" value="' + esc(query) + '">';
     h += '<div id="home"></div></main>';
     return h;
@@ -814,6 +818,7 @@ window.MEMO_RH = true;
       if (tt) { tt.value = ""; }
       bkMsg = "Enregistré. Synchronisation…"; render(); syncNow(true);
     }
+    else if (a === "syncbtn") { manualSync = true; syncNow(true); }
     else if (a === "bknow") { bkMsg = "Synchronisation en cours…"; var m = $("bkmsg"); if (m) { m.textContent = bkMsg; } syncNow(true); }
     else if (a === "bkforget") {
       if (NATIVE) { sync("bk.forget", []); } else { try { window.localStorage.removeItem("memo-rh-gh"); } catch (e) { } }
@@ -935,7 +940,7 @@ window.MEMO_RH = true;
   setTimeout(function () { cfgImport(false); }, 600);
 
   /* ---------- synchronisation GitHub : fusion des notes de tous les appareils ---------- */
-  var DEFREPO = "ClementLGS/memo-maman-save", SYNCK = "memo-rh-gh", SYNCT = "memo-rh-lastsync", syncBusy = false, syncAgain = false, syncTries = 0, pullCb = null, pushCb = null;
+  var SYNCIC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-15.5-6.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 15.5 6.2L21 16"/><path d="M21 21v-5h-5"/></svg>', manualSync = false, DEFREPO = "ClementLGS/memo-maman-save", SYNCK = "memo-rh-gh", SYNCT = "memo-rh-lastsync", syncBusy = false, syncAgain = false, syncTries = 0, pullCb = null, pushCb = null;
   function canon(o) {
     if (Array.isArray(o)) { return "[" + o.map(canon).join(",") + "]"; }
     if (o && typeof o === "object") { return "{" + Object.keys(o).sort().filter(function (k) { return o[k] !== undefined; }).map(function (k) { return JSON.stringify(k) + ":" + canon(o[k]); }).join(",") + "}"; }
@@ -1058,13 +1063,15 @@ window.MEMO_RH = true;
   function userBusy() { var a = document.activeElement; return !!drag || !!press || (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA")) || view.n === "set"; }
   function syncNow(manual) {
     var i = bkInfo();
-    if (!i.repo || !i.token) { if (manual) { toast("Configure d'abord le dépôt et le jeton (Réglages).", true); } return; }
+    if (!i.repo || !i.token) { manualSync = false; if (manual) { toast("Configure d'abord le dépôt et le jeton (Réglages).", true); } return; }
     if (locked) { return; }
     if (syncBusy) { syncAgain = true; return; }
-    syncBusy = true; syncTries = 0; syncCycle();
+    syncBusy = true; syncTries = 0; spinSync(true); syncCycle();
   }
+  function spinSync(on) { var b = document.querySelectorAll("[data-a=syncbtn]"), i; for (i = 0; i < b.length; i++) { b[i].classList.toggle("spin", on); } }
   function syncFinish(res) {
-    syncBusy = false;
+    syncBusy = false; spinSync(false);
+    if (manualSync) { manualSync = false; if (res.indexOf("err:") === 0) { toast("Synchronisation : " + res.slice(4), true); } else if (res.indexOf("ok") === 0) { toast(res === "ok:inchangé" ? "Tout est à jour." : "Synchronisé."); } }
     if (res.indexOf("ok") === 0) { try { window.localStorage.setItem(SYNCT, String(Math.floor(Date.now() / 1000))); } catch (e) { } }
     window.__bk(res);
     if (syncAgain) { syncAgain = false; setTimeout(function () { syncNow(false); }, 400); }
@@ -1080,7 +1087,7 @@ window.MEMO_RH = true;
         if (canon(M) !== canon(D)) { D = M; applied = true; save(true); }
         needPush = canon(payload(D)) !== canon(payload(remote));
       } else { needPush = true; }
-      if (applied && !userBusy()) { render(); }
+      if (applied && !userBusy()) { render(); spinSync(true); }
       if (!needPush) { return syncFinish("ok:inchangé"); }
       ghPush(JSON.stringify(payload(D), null, 1), sha, function (ps) {
         if (ps === "ok") { syncFinish(applied ? "ok:fusion" : "ok"); }
