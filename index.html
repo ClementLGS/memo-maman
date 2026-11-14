@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1013 TDBA:4-->
+<!--TDBV:1014 TDBA:4-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -126,7 +126,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1013", 10) || 0, UI_NAME = "1.13";
+  var UI_CODE = parseInt("1014", 10) || 0, UI_NAME = "1.14";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -328,7 +328,7 @@ window.MEMO_RH = true;
     return h;
   }
   function homeH() {
-    var h = '<header class="top"><span style="flex:1"></span><button class="ib" data-a="set" aria-label="Réglages">⚙︎</button></header><main>' + banners();
+    var h = '<header class="top"><h1 class="long">Prise de notes Ciolek</h1><button class="ib" data-a="set" aria-label="Réglages">⚙︎</button></header><main>' + banners();
     h += '<input class="search" id="q" type="search" placeholder="Rechercher dans les notes" value="' + esc(query) + '">';
     h += '<div id="home"></div></main>';
     return h;
