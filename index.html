@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1008 TDBA:3-->
+<!--TDBV:1009 TDBA:3-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -50,6 +50,8 @@ main{padding:0 16px}
 .note.done .chk i{background:var(--c,var(--acc));border-color:var(--c,var(--acc))}
 .note.done .chk i::after{content:"";position:absolute;left:6px;top:2px;width:6px;height:11px;border:solid var(--acc-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
 .nt{flex:1;text-align:left;padding:10px 4px;min-height:44px;overflow-wrap:anywhere;white-space:pre-wrap}
+.xdel{flex:none;width:44px;height:44px;margin-right:-6px;font-size:30px;line-height:1;color:var(--mute);display:flex;align-items:center;justify-content:center}
+.xdel:active{color:var(--bad,#ff6b6b)}
 .nt small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
 .note.done .nt{color:var(--mute);text-decoration:line-through}
 .add{display:flex;gap:8px;padding:8px 10px 10px;border-top:1px solid var(--line)}
@@ -97,7 +99,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1008", 10) || 0, UI_NAME = "1.8";
+  var UI_CODE = parseInt("1009", 10) || 0, UI_NAME = "1.9";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -116,7 +118,8 @@ window.MEMO_RH = true;
     ["Réunion", []],
     ["Litige", ["Avocat"]],
     ["Comptabilité", ["Pennylane dépôt", "Virement client", "Virement fournisseur", "Bilan", "Banque", "Virement salarié", "Pennylane rapprochement"]],
-    ["Juridique", []]
+    ["Juridique", []],
+    ["Feedback", ["Idées", "Bugs"]]
   ];
 
   /* ---------- pont avec l'appli native ---------- */
@@ -136,25 +139,32 @@ window.MEMO_RH = true;
   function defCat(d) {
     return { id: uid(), name: d[0], notes: [], subs: d[1].map(function (n) { return { id: uid(), name: n, notes: [] }; }) };
   }
-  function defaults() { return { v: 2, cats: DEFAULT.map(defCat) }; }
+  function defaults() { return { v: 3, cats: DEFAULT.map(defCat) }; }
   function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim(); }
   /* Données d'une ancienne version : on garde tout ce qui existe, on ajoute les catégories et sous-catégories qui manquent, on remet l'ordre de la feuille. */
   function migrate(d) {
-    var changed = false;
-    if ((d.v || 1) >= 2) { return false; }
-    DEFAULT.forEach(function (def) {
-      var c = null, i;
-      for (i = 0; i < d.cats.length; i++) { if (norm(d.cats[i].name) === norm(def[0])) { c = d.cats[i]; break; } }
-      if (!c) { d.cats.push(defCat(def)); changed = true; return; }
-      def[1].forEach(function (sn) {
-        var ok = c.subs.some(function (s) { return norm(s.name) === norm(sn); });
-        if (!ok) { c.subs.push({ id: uid(), name: sn, notes: [] }); changed = true; }
+    var changed = false, i;
+    if ((d.v || 1) < 2) {
+      DEFAULT.forEach(function (def) {
+        var c = null, i;
+        for (i = 0; i < d.cats.length; i++) { if (norm(d.cats[i].name) === norm(def[0])) { c = d.cats[i]; break; } }
+        if (!c) { d.cats.push(defCat(def)); return; }
+        def[1].forEach(function (sn) {
+          var ok = c.subs.some(function (s) { return norm(s.name) === norm(sn); });
+          if (!ok) { c.subs.push({ id: uid(), name: sn, notes: [] }); }
+        });
       });
-    });
-    function rank(c) { var i; for (i = 0; i < DEFAULT.length; i++) { if (norm(DEFAULT[i][0]) === norm(c.name)) { return i; } } return 99; }
-    d.cats = d.cats.map(function (c, i) { return { c: c, i: i }; }).sort(function (x, y) { return rank(x.c) - rank(y.c) || x.i - y.i; }).map(function (x) { return x.c; });
-    d.v = 2;
-    return true;
+      var rank = function (c) { var k; for (k = 0; k < DEFAULT.length; k++) { if (norm(DEFAULT[k][0]) === norm(c.name)) { return k; } } return 99; };
+      d.cats = d.cats.map(function (c, k) { return { c: c, i: k }; }).sort(function (x, y) { return rank(x.c) - rank(y.c) || x.i - y.i; }).map(function (x) { return x.c; });
+      d.v = 2; changed = true;
+    }
+    if (d.v < 3) { /* v3 : catégorie Feedback (ajoutée à la fin, l'ordre choisi par l'utilisateur n'est pas touché) */
+      var has = false;
+      for (i = 0; i < d.cats.length; i++) { if (norm(d.cats[i].name) === "feedback") { has = true; } }
+      if (!has) { d.cats.push(defCat(DEFAULT[DEFAULT.length - 1])); }
+      d.v = 3; changed = true;
+    }
+    return changed;
   }
   function parseData(raw) {
     var d = JSON.parse(raw);
@@ -202,7 +212,8 @@ window.MEMO_RH = true;
   function sub(c, id) { var i; for (i = 0; i < c.subs.length; i++) { if (c.subs[i].id === id) { return c.subs[i]; } } return null; }
   function openCount(list) { return list.filter(function (n) { return !n.done; }).length; }
   function catOpen(c) { return c.subs.reduce(function (t, s) { return t + openCount(s.notes); }, openCount(c.notes)); }
-  function color(i) { return "hsl(" + ((i * 53 + 222) % 360) + " 58% 52%)"; }
+  function color(i) { return i === 8 ? "hsl(40 88% 54%)" : "hsl(" + ((i * 53 + 222) % 360) + " 58% 52%)"; }
+  function rk(c) { var k; for (k = 0; k < DEFAULT.length; k++) { if (norm(DEFAULT[k][0]) === norm(c.name)) { return k; } } return Math.max(D.cats.indexOf(c), 9); }
   function fmt(ts) { try { return new Date(ts).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }); } catch (e) { return ""; } }
   var toastT = 0;
   function toast(msg, bad) {
@@ -295,14 +306,15 @@ window.MEMO_RH = true;
         '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
         '<path d="M12 3l9.500 17h-19z"/><path d="M12 10v4.500M12 17.500v.01"/>',
         '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8.500 7.500h7M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/>',
-        '<path d="M12 4v16M7 20h10M5 7h14"/><path d="M5 7l-2.500 6a3 3 0 0 0 5 0zM19 7l-2.500 6a3 3 0 0 0 5 0z"/>'
+        '<path d="M12 4v16M7 20h10M5 7h14"/><path d="M5 7l-2.500 6a3 3 0 0 0 5 0zM19 7l-2.500 6a3 3 0 0 0 5 0z"/>',
+        '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.500 10.900c.6.500 1 1.200 1 2.100h5c0-.900.400-1.600 1-2.100A6 6 0 0 0 12 3z"/>'
       ], g = D.cats.length, f;
       h = '<div class="libH">Catégories</div><div class="mods">';
       D.cats.forEach(function (c, i) {
         var n = catOpen(c);
-        h += '<button class="mi" data-ro="1" style="--c:' + color(i) + '" data-a="open" data-c="' + c.id + '" aria-label="' + esc(c.name) + ", " + n + ' à faire">'
+        h += '<button class="mi" data-ro="1" style="--c:' + color(rk(c)) + '" data-a="open" data-c="' + c.id + '" aria-label="' + esc(c.name) + ", " + n + ' à faire">'
           + (n ? '<span class="bd">' + n + "</span>" : "")
-          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (IC[i] || IC[3]) + "</svg><span>" + esc(c.name) + "</span></button>";
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (IC[rk(c)] || IC[3]) + "</svg><span>" + esc(c.name) + "</span></button>";
       });
       box.innerHTML = h + '</div><p class="hint" style="margin-top:12px">Appui long sur une catégorie pour la déplacer.</p>'; return;
     }
@@ -319,14 +331,15 @@ window.MEMO_RH = true;
   }
   function noteH(n, c, s, col) {
     return '<div class="note' + (n.done ? " done" : "") + '" style="--c:' + col + '"><button class="chk" data-a="tog" data-c="' + c + '" data-s="' + s + '" data-n="' + n.id + '" aria-label="Terminer"><i></i></button>'
-      + '<button class="nt" data-a="edit" data-c="' + c + '" data-s="' + s + '" data-n="' + n.id + '">' + esc(n.t) + "<small>" + fmt(n.ts) + "</small></button></div>";
+      + '<button class="nt" data-a="edit" data-c="' + c + '" data-s="' + s + '" data-n="' + n.id + '">' + esc(n.t) + "<small>" + fmt(n.ts) + "</small></button>"
+      + '<button class="xdel" data-a="delnote" data-c="' + c + '" data-s="' + s + '" data-n="' + n.id + '" aria-label="Supprimer la note">×</button></div>';
   }
   /* Vue d'une liste de notes : celles de la catégorie (sid vide) ou d'un sous-thème. */
   function subH(cid, sid) {
     var c = cat(cid), s = c && sid ? sub(c, sid) : null;
     if (!c) { view = { n: "home" }; return homeH(); }
     if (sid && !s) { view = { n: "cat", id: cid }; return catH(c); }
-    var notes = s ? s.notes : c.notes, col = color(D.cats.indexOf(c)), key = cid + ":" + sid;
+    var notes = s ? s.notes : c.notes, col = color(rk(c)), key = cid + ":" + sid;
     var vis = notes.filter(function (n) { return showDone || !n.done; }), sorted = vis.filter(function (n) { return !n.done; }).concat(vis.filter(function (n) { return n.done; }));
     var h = '<header class="top"><button class="ib txt" data-a="back">‹ ' + esc(c.name) + "</button><h1>" + esc(s ? s.name : "Notes") + "</h1>"
       + (s ? '<button class="ib" data-a="submenu" data-c="' + cid + '" data-s="' + sid + '" aria-label="Options">⋯</button>' : "") + "</header><main>" + banners();
@@ -343,7 +356,7 @@ window.MEMO_RH = true;
       + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + icon + "</svg><span>" + esc(label) + "</span></button>";
   }
   function catH(c) {
-    var col = color(D.cats.indexOf(c)), h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>' + esc(c.name) + '</h1><button class="ib" data-a="catmenu" data-c="' + c.id + '" aria-label="Options">⋯</button></header><main>' + banners();
+    var col = color(rk(c)), h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>' + esc(c.name) + '</h1><button class="ib" data-a="catmenu" data-c="' + c.id + '" aria-label="Options">⋯</button></header><main>' + banners();
     h += '<div class="mods m3">' + tile(IC_NOTE, "Notes", openCount(c.notes), c.id, "", col, "", "opensub");
     c.subs.forEach(function (s) { h += tile(IC_DOC, s.name, openCount(s.notes), c.id, s.id, col, "", "opensub", 1); });
     h += tile(IC_PLUS, "Sous-thème", null, c.id, "", col, "new", "subadd") + '</div><p class="hint" style="margin-top:12px">Appui long sur un sous-thème pour le déplacer.</p></main>';
@@ -405,6 +418,11 @@ window.MEMO_RH = true;
         { label: "Supprimer", kind: "dng", fn: function () { var j = findNote(list, n); if (j >= 0) { list.splice(j, 1); save(); render(); } } },
         { label: "Annuler", kind: "sec2" },
         { label: "Enregistrer", fn: function (v) { v = String(v || "").trim(); var j = findNote(list, n); if (v && j >= 0) { list[j].t = v; save(); render(); } } }] });
+    }
+    else if (a === "delnote") {
+      list = notesOf(c, s); i = list ? findNote(list, n) : -1;
+      if (i < 0) { return; }
+      confirmBox("Supprimer cette note ?", list[i].t.length > 90 ? list[i].t.slice(0, 90) + "…" : list[i].t, "Supprimer", function () { var j = findNote(list, n); if (j >= 0) { list.splice(j, 1); save(); render(); } });
     }
     else if (a === "subadd") {
       ask("Nouveau sous-thème", "", "Nom du sous-thème", "Créer", function (v) { cc = cat(c); if (cc) { cc.subs.push({ id: uid(), name: v, notes: [] }); save(); render(); } });
