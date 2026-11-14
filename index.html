@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1018 TDBA:4-->
+<!--TDBV:1019 TDBA:5-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -145,7 +145,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1018", 10) || 0, UI_NAME = "1.18";
+  var UI_CODE = parseInt("1019", 10) || 0, UI_NAME = "1.19";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -184,7 +184,7 @@ window.MEMO_RH = true;
   function defCat(d) {
     return { id: uid(), name: d[0], notes: [], subs: d[1].map(function (n) { return { id: uid(), name: n, notes: [] }; }) };
   }
-  function defaults() { return { v: 4, fb: [], wp: "nuit", cats: DEFAULT.map(defCat) }; }
+  function defaults() { return { v: 5, tomb: {}, fb: [], wp: "nuit", cats: DEFAULT.map(defCat) }; }
   function norm(s) { return String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim(); }
   /* Données d'une ancienne version : on garde tout ce qui existe, on ajoute les catégories et sous-catégories qui manquent, on remet l'ordre de la feuille. */
   function migrate(d) {
@@ -217,26 +217,33 @@ window.MEMO_RH = true;
       }
       d.v = 4; changed = true;
     }
+    if (d.v < 5) { /* v5 : synchronisation entre appareils (suppressions mémorisées, ordre choisi daté) */
+      d.tomb = d.tomb || {};
+      var cr = d.cats.map(function (c) { return rankCat(c.name); }), custom = cr.some(function (x, k) { return k && x < cr[k - 1]; });
+      if (custom) { d.ord = Date.now(); }
+      d.cats.forEach(function (c) { var sr = c.subs.map(function (sb) { return rankSub(c.name, sb.name); }); if (sr.some(function (x, k) { return k && x < sr[k - 1]; })) { c.so = Date.now(); } });
+      d.v = 5; changed = true;
+    }
     return changed;
   }
   function parseData(raw) {
     var d = JSON.parse(raw);
     if (!d || !Array.isArray(d.cats)) { throw new Error("format"); }
-    d.fb = Array.isArray(d.fb) ? d.fb : []; if (typeof d.wp !== "string") { d.wp = "nuit"; }
+    d.fb = Array.isArray(d.fb) ? d.fb : []; d.tomb = (d.tomb && typeof d.tomb === "object") ? d.tomb : {}; if (typeof d.wp !== "string") { d.wp = "nuit"; }
     d.cats.forEach(function (c) { c.notes = c.notes || []; c.subs = c.subs || []; c.subs.forEach(function (s) { s.notes = s.notes || []; }); });
     return d;
   }
   var bkT = 0, bkErr = "", bkMsg = "";
-  function save() {
+  function save(quiet) {
     if (locked) { return false; }
     var s = JSON.stringify(D);
     if (NATIVE) {
       var r = sync("data.set", [s]);
       if (r !== "ok") { toast("Sauvegarde impossible : " + r.replace(/^err:/, ""), true); return false; }
-      clearTimeout(bkT); bkT = setTimeout(function () { bkRun(false); }, 120000);
     } else {
       try { window.localStorage.setItem(KEY, s); } catch (e) { }
     }
+    if (!quiet) { clearTimeout(bkT); bkT = setTimeout(function () { syncNow(false); }, 8000); }
     return true;
   }
   function load() {
@@ -628,6 +635,16 @@ window.MEMO_RH = true;
     });
     return h + "</main>";
   }
+  function fbSendBrowser(text) {
+    var c = ghStore(), d = new Date(), pad2 = function (n) { return (n < 10 ? "0" : "") + n; },
+      name = "feedback/" + d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) + "-" + pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds()) + ".md";
+    window.fetch("https://api.github.com/repos/" + c.repo + "/contents/" + name, { method: "PUT", headers: ghHead(c.token), body: JSON.stringify({ message: "Feedback de l'appli", content: b64enc(text) }), cache: "no-store" }).then(function (r) {
+      if (r.status === 200 || r.status === 201) { return window.__fb("ok"); }
+      if (r.status === 401 || r.status === 403) { return window.__fb("err:jeton refusé (droit « Contents : lecture et écriture » nécessaire)"); }
+      if (r.status === 404) { return window.__fb("err:dépôt introuvable, ou jeton sans accès"); }
+      window.__fb("err:GitHub a répondu " + r.status);
+    }).catch(function () { window.__fb("err:réseau indisponible"); });
+  }
   function fbText() {
     var out = "# Feedback — " + fbDate(Date.now()) + " (version " + UI_NAME + ")\n", order = ["bug", "idee", "amel"];
     order.forEach(function (k) {
@@ -649,29 +666,35 @@ window.MEMO_RH = true;
     }
   };
   function bkInfo() {
-    var r = NATIVE ? sync("bk.status", []) : "", p;
-    if (r.indexOf("ok:") !== 0) { return { repo: "", token: false, ts: 0 }; }
-    p = r.slice(3).split("|");
-    return { repo: p[0] || "", token: p[1] === "1", ts: +p[2] || 0 };
+    var ts = 0, r, p, c;
+    try { ts = +window.localStorage.getItem("memo-rh-lastsync") || 0; } catch (e) { }
+    if (NATIVE) {
+      r = sync("bk.status", []);
+      if (r.indexOf("ok:") !== 0) { return { repo: "", token: false, ts: ts }; }
+      p = r.slice(3).split("|");
+      return { repo: p[0] || "", token: p[1] === "1", ts: ts };
+    }
+    c = ghStore();
+    return { repo: c.repo, token: !!c.token, ts: ts };
   }
   function fmtTs(t) { try { return new Date(t * 1000).toLocaleString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } }
   function bkLine(i) {
     if (!i.repo || !i.token) { return "Pas encore configurée."; }
-    return i.ts ? "Dernière sauvegarde : " + fmtTs(i.ts) + "." : "Configurée, aucune sauvegarde faite pour l'instant.";
+    return i.ts ? "Dernière synchronisation : " + fmtTs(i.ts) + "." : "Configurée, pas encore synchronisée.";
   }
   function setH() {
     var json = JSON.stringify(D, null, 1), i = bkInfo(), h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>Réglages</h1></header><main>' + banners();
-    h += '<div class="box"><h3>Sauvegarde sur GitHub</h3><p>Une copie de tes notes (fichier notes.json) est envoyée dans un dépôt GitHub <b>privé</b> : si le téléphone ou l\'appli est perdu, les notes sont retrouvables. L\'envoi se fait à l\'ouverture de l\'appli, quand tu y reviens, et quelques minutes après une modification (au plus une fois par heure). Rien ne part si l\'appli reste fermée.</p>'
+    h += '<div class="box"><h3>Synchronisation GitHub</h3><p>Tes notes sont synchronisées entre tes appareils (téléphone, ordinateur) par un dépôt GitHub <b>privé</b>, qui sert aussi de sauvegarde : si un appareil est perdu, les notes sont retrouvées. La synchronisation se fait à l\'ouverture, quand tu reviens sur l\'appli, toutes les 90 secondes et peu après chaque modification.</p>'
       + '<p id="bkmsg" style="color:var(--ink)">' + esc(bkMsg || bkLine(i)) + "</p>"
-      + (NATIVE ? '<input class="fld" id="bkRepo" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="propriétaire/nom-du-dépôt" value="' + esc(i.repo) + '">'
-        + '<input class="fld" id="bkTok" type="password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="' + (i.token ? "Jeton enregistré (laisser vide pour le garder)" : "Jeton GitHub (github_pat_…)") + '">'
-        + '<div class="row"><button class="btn" data-a="bkset">Enregistrer</button><button class="btn sec2" data-a="bknow">Sauvegarder maintenant</button></div>'
-        + (i.token ? '<div class="row"><button class="btn sec2" data-a="bkforget">Supprimer le jeton</button></div>' : "")
-        : "<p>Disponible dans l'appli installée.</p>") + "</div>";
-    h += '<div class="box"><h3>Mises à jour</h3><p>Version ' + esc(UI_NAME) + (NATIVE ? "" : " (aperçu navigateur)") + ". L'appli cherche seule les nouvelles versions sur GitHub, à l'ouverture puis toutes les 6 heures.</p>"
+      + '<input class="fld" id="bkRepo" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="propriétaire/nom-du-dépôt" value="' + esc(i.repo) + '">'
+      + '<input class="fld" id="bkTok" type="password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="' + (i.token ? "Jeton enregistré (laisser vide pour le garder)" : "Jeton GitHub (github_pat_…)") + '">'
+      + '<div class="row"><button class="btn" data-a="bkset">Enregistrer</button><button class="btn sec2" data-a="bknow">Synchroniser maintenant</button></div>'
+      + (NATIVE ? "" : '<div class="row"><label class="btn sec2" style="display:inline-flex;align-items:center">Importer reglages.txt<input type="file" id="cfgFile" accept=".txt,text/plain" hidden></label></div>')
+      + (i.token ? '<div class="row"><button class="btn sec2" data-a="bkforget">Supprimer le jeton</button></div>' : "") + "</div>";
+    if (NATIVE) { h += '<div class="box"><h3>Mises à jour</h3><p>Version ' + esc(UI_NAME) + (NATIVE ? "" : " (aperçu navigateur)") + ". L'appli cherche seule les nouvelles versions sur GitHub, à l'ouverture puis toutes les 6 heures.</p>"
       + '<input class="fld" id="updSrc" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="' + esc(srcStr(REPO)) + '" value="' + esc(D.upd || "") + '">'
       + '<div class="row"><button class="btn sec2" data-a="cfgimp">Importer reglages.txt</button></div><div class="row"><button class="btn" data-a="upd">Chercher une mise à jour</button><button class="btn sec2" data-a="updsave">Changer la source</button></div>'
-      + '<p id="updmsg" style="margin:10px 0 0">' + esc(updMsg) + '</p><p style="margin:6px 0 0">Source actuelle : ' + esc(srcStr(srcOf())) + "</p></div>";
+      + '<p id="updmsg" style="margin:10px 0 0">' + esc(updMsg) + '</p><p style="margin:6px 0 0">Source actuelle : ' + esc(srcStr(srcOf())) + "</p></div>"; }
     return h + "</main>";
   }
 
@@ -681,7 +704,7 @@ window.MEMO_RH = true;
   function addNote(c, s, text) {
     var list = notesOf(c, s), t = String(text || "").trim();
     if (!list || !t) { return; }
-    list.push({ id: uid(), t: t, done: false, ts: Date.now() });
+    var nowT = Date.now(); list.push({ id: uid(), t: t, done: false, ts: nowT, u: nowT });
     save(); focusSec = c + ":" + s; render();
   }
   function onClick(e) {
@@ -693,38 +716,38 @@ window.MEMO_RH = true;
     else if (a === "back") { view = view.n === "sub" ? { n: "cat", id: view.id } : (view.n === "fb" || view.n === "wp") ? { n: "autre" } : { n: "home" }; render(); window.scrollTo(0, 0); }
     else if (a === "set") { view = { n: "set" }; render(); window.scrollTo(0, 0); }
     else if (a === "reload") { post("reloadUi", []); }
-    else if (a === "tog") { list = notesOf(c, s); i = list ? findNote(list, n) : -1; if (i >= 0) { list[i].done = !list[i].done; save(); render(); } }
+    else if (a === "tog") { list = notesOf(c, s); i = list ? findNote(list, n) : -1; if (i >= 0) { list[i].done = !list[i].done; list[i].u = Date.now(); save(); render(); } }
     else if (a === "add") { var inp = document.querySelector('input[data-add="' + c + ":" + s + '"]'); if (inp) { addNote(c, s, inp.value); } }
     else if (a === "edit") {
       list = notesOf(c, s); i = list ? findNote(list, n) : -1;
       if (i < 0) { return; }
       dialog({ title: "Modifier la note", input: { value: list[i].t, multi: true }, buttons: [
-        { label: "Supprimer", kind: "dng", fn: function () { var j = findNote(list, n); if (j >= 0) { list.splice(j, 1); save(); render(); } } },
+        { label: "Supprimer", kind: "dng", fn: function () { var j = findNote(list, n); if (j >= 0) { list.splice(j, 1); D.tomb[n] = Date.now(); save(); render(); } } },
         { label: "Annuler", kind: "sec2" },
-        { label: "Enregistrer", fn: function (v) { v = String(v || "").trim(); var j = findNote(list, n); if (v && j >= 0) { list[j].t = v; save(); render(); } } }] });
+        { label: "Enregistrer", fn: function (v) { v = String(v || "").trim(); var j = findNote(list, n); if (v && j >= 0) { list[j].t = v; list[j].u = Date.now(); save(); render(); } } }] });
     }
     else if (a === "delnote") {
       list = notesOf(c, s); i = list ? findNote(list, n) : -1;
       if (i < 0) { return; }
-      confirmBox("Supprimer cette note ?", list[i].t.length > 90 ? list[i].t.slice(0, 90) + "…" : list[i].t, "Supprimer", function () { var j = findNote(list, n); if (j >= 0) { list.splice(j, 1); save(); render(); } });
+      confirmBox("Supprimer cette note ?", list[i].t.length > 90 ? list[i].t.slice(0, 90) + "…" : list[i].t, "Supprimer", function () { var j = findNote(list, n); if (j >= 0) { list.splice(j, 1); D.tomb[n] = Date.now(); save(); render(); } });
     }
     else if (a === "subadd") {
-      ask("Nouveau sous-thème", "", "Nom du sous-thème", "Créer", function (v) { cc = cat(c); if (cc) { cc.subs.push({ id: uid(), name: v, notes: [] }); save(); render(); } });
+      ask("Nouveau sous-thème", "", "Nom du sous-thème", "Créer", function (v) { cc = cat(c); if (cc) { delete D.tomb[subKey(cc.name, v)]; cc.subs.push({ id: uid(), name: v, notes: [], u: Date.now() }); save(); render(); } });
     }
     else if (a === "submenu") {
       cc = cat(c); var ss = cc ? sub(cc, s) : null;
       if (!ss) { return; }
       dialog({ title: ss.name, menu: [
-        { label: "Renommer", fn: function () { ask("Renommer le sous-thème", ss.name, "", "Enregistrer", function (v) { ss.name = v; save(); render(); }); } },
+        { label: "Renommer", fn: function () { ask("Renommer le sous-thème", ss.name, "", "Enregistrer", function (v) { ss.name = v; ss.u = Date.now(); save(); render(); }); } },
         { label: "Supprimer ce sous-thème", danger: true, fn: function () {
           confirmBox("Supprimer « " + ss.name + " » ?", ss.notes.length ? "Ses " + ss.notes.length + " note(s) seront supprimées aussi." : "Il est vide.", "Supprimer", function () {
-            var k = cc.subs.indexOf(ss); if (k >= 0) { cc.subs.splice(k, 1); save(); render(); } });
+            var k = cc.subs.indexOf(ss); if (k >= 0) { cc.subs.splice(k, 1); D.tomb[subKey(cc.name, ss.name)] = Date.now(); save(); render(); } });
         } }], buttons: [{ label: "Fermer", kind: "sec2" }] });
     }
     else if (a === "catmenu") {
       cc = cat(c); if (!cc) { return; }
       dialog({ title: cc.name, menu: [
-        { label: "Renommer la catégorie", fn: function () { ask("Renommer la catégorie", cc.name, "", "Enregistrer", function (v) { cc.name = v; save(); render(); }); } },
+        { label: "Renommer la catégorie", fn: function () { ask("Renommer la catégorie", cc.name, "", "Enregistrer", function (v) { cc.name = v; cc.u = Date.now(); save(); render(); }); } },
         { label: showDone ? "Masquer les notes terminées" : "Afficher les notes terminées", fn: function () { showDone = !showDone; render(); } },
         { label: "Effacer les notes terminées", danger: true, fn: function () {
           confirmBox("Effacer les notes terminées ?", "Dans cette catégorie et ses sous-thèmes.", "Effacer", function () {
@@ -765,12 +788,11 @@ window.MEMO_RH = true;
     else if (a === "fbsend") {
       if (fbBusy) { return; }
       if (!D.fb.length) { return toast("Aucune remarque à envoyer.", true); }
-      if (!NATIVE) { return toast("Envoi disponible seulement dans l'appli installée.", true); }
       var bi = bkInfo();
       if (!bi.repo || !bi.token) { return toast("Configure d'abord la sauvegarde GitHub dans Réglages.", true); }
       fbBusy = true; fbSent = D.fb.map(function (f) { return f.id; }); fbMsg = "Envoi en cours…";
       var fm = $("fbmsg"); if (fm) { fm.textContent = fbMsg; }
-      post("feedbackSend", [fbText()]);
+      if (NATIVE) { post("feedbackSend", [fbText()]); } else { fbSendBrowser(fbText()); }
     }
     else if (a === "cfgimp") { cfgImport(true); }
     else if (a === "updsave") {
@@ -781,13 +803,23 @@ window.MEMO_RH = true;
       save(); toast("Source des mises à jour : " + srcStr(srcOf())); render();
     }
     else if (a === "bkset") {
-      var rr = $("bkRepo"), tt = $("bkTok"), res = sync("bk.set", [rr ? rr.value : "", tt ? tt.value : ""]);
-      if (res !== "ok") { return toast(res.replace(/^err:/, ""), true); }
+      var rr = $("bkRepo"), tt = $("bkTok"), rv = rr ? rr.value.trim() : "", tv = tt ? tt.value.trim() : "", cur, res;
+      if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(rv)) { return toast("Dépôt : format propriétaire/nom", true); }
+      if (NATIVE) { res = sync("bk.set", [rv, tv]); if (res !== "ok") { return toast(res.replace(/^err:/, ""), true); } }
+      else {
+        cur = ghStore();
+        if (!tv && !cur.token) { return toast("Jeton manquant.", true); }
+        try { window.localStorage.setItem("memo-rh-gh", JSON.stringify({ repo: rv, token: tv || cur.token })); } catch (e) { return toast("Enregistrement impossible dans ce navigateur.", true); }
+      }
       if (tt) { tt.value = ""; }
-      bkMsg = "Enregistré. Envoi en cours…"; render(); bkRun(true);
+      bkMsg = "Enregistré. Synchronisation…"; render(); syncNow(true);
     }
-    else if (a === "bknow") { bkMsg = "Envoi en cours…"; var m = $("bkmsg"); if (m) { m.textContent = bkMsg; } bkRun(true); }
-    else if (a === "bkforget") { sync("bk.forget", []); bkErr = ""; bkMsg = "Jeton supprimé : la sauvegarde GitHub est arrêtée."; render(); }
+    else if (a === "bknow") { bkMsg = "Synchronisation en cours…"; var m = $("bkmsg"); if (m) { m.textContent = bkMsg; } syncNow(true); }
+    else if (a === "bkforget") {
+      if (NATIVE) { sync("bk.forget", []); } else { try { window.localStorage.removeItem("memo-rh-gh"); } catch (e) { } }
+      try { window.localStorage.removeItem("memo-rh-lastsync"); } catch (e) { }
+      bkErr = ""; bkMsg = "Jeton supprimé : la synchronisation est arrêtée."; render();
+    }
   }
   /* ---------- réorganiser par appui long ---------- */
   var press = null, drag = null, noClick = 0;
@@ -821,10 +853,10 @@ window.MEMO_RH = true;
     if (!d) { return; }
     if (d.cl.parentNode) { d.cl.parentNode.removeChild(d.cl); }
     ids = roTiles(d.box).map(function (el) { return el.getAttribute("data-s") || el.getAttribute("data-c"); });
-    if (view.n === "home") { arr = D.cats; } else { var cc = cat(view.id); arr = cc ? cc.subs : null; }
+    var cc = null; if (view.n === "home") { arr = D.cats; } else { cc = cat(view.id); arr = cc ? cc.subs : null; }
     if (arr && !locked) {
       for (i = 0; i < ids.length; i++) { for (j = 0; j < arr.length; j++) { if (arr[j].id === ids[i]) { out.push(arr[j]); } } }
-      if (out.length === arr.length) { arr.splice.apply(arr, [0, arr.length].concat(out)); save(); }
+      if (out.length === arr.length) { arr.splice.apply(arr, [0, arr.length].concat(out)); if (arr === D.cats) { D.ord = Date.now(); } else { cc.so = Date.now(); } save(); }
     }
     render();
   }
@@ -871,22 +903,200 @@ window.MEMO_RH = true;
     render();
     if (p[1] || p[2] === "1") { bkRun(true); }
   }
+  function parseCfg(text) {
+    var o = {}, ls = String(text).replace(/\uFEFF/g, "").split(/\r?\n/), i, ln, e, k, v;
+    for (i = 0; i < ls.length; i++) {
+      ln = ls[i].trim(); if (!ln || ln.charAt(0) === "#") { continue; } e = ln.indexOf("="); if (e < 0) { continue; }
+      k = norm(ln.slice(0, e)); v = ln.slice(e + 1).trim().replace(/^["“](.*)["”]$/, "$1");
+      if (!v || /^colle_ici/i.test(v) || /votre-/i.test(v) || v.charAt(0) === "<") { continue; }
+      if (k === "mise_a_jour" || k === "mise_a_jour_source") { o.upd = v; } else if (k === "sauvegarde_depot") { o.repo = v; } else if (k === "sauvegarde_jeton") { o.token = v; }
+    }
+    return o;
+  }
+  document.addEventListener("change", function (e) {
+    var f = e.target && e.target.id === "cfgFile" && e.target.files && e.target.files[0], rd;
+    if (!f) { return; }
+    rd = new FileReader();
+    rd.onload = function () {
+      var o = parseCfg(rd.result), cur = ghStore();
+      if (!o.repo && !o.token) { return toast("Aucune valeur remplie dans ce fichier.", true); }
+      if (o.repo && !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(o.repo)) { return toast("sauvegarde_depot : format propriétaire/nom", true); }
+      try { window.localStorage.setItem("memo-rh-gh", JSON.stringify({ repo: o.repo || cur.repo, token: o.token || cur.token })); } catch (x) { return toast("Enregistrement impossible dans ce navigateur.", true); }
+      toast("Réglages importés. Synchronisation…"); bkErr = ""; bkMsg = "Réglages importés. Synchronisation…"; render(); syncNow(true);
+    };
+    rd.readAsText(f);
+  });
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { cfgImport(false); } });
   setTimeout(function () { cfgImport(false); }, 600);
 
-  /* ---------- sauvegarde GitHub (le travail est fait par l'appli native) ---------- */
-  function bkRun(manual) { if (NATIVE) { post("backupRun", [!!manual]); } }
+  /* ---------- synchronisation GitHub : fusion des notes de tous les appareils ---------- */
+  var SYNCK = "memo-rh-gh", SYNCT = "memo-rh-lastsync", syncBusy = false, syncAgain = false, syncTries = 0, pullCb = null, pushCb = null;
+  function canon(o) {
+    if (Array.isArray(o)) { return "[" + o.map(canon).join(",") + "]"; }
+    if (o && typeof o === "object") { return "{" + Object.keys(o).sort().filter(function (k) { return o[k] !== undefined; }).map(function (k) { return JSON.stringify(k) + ":" + canon(o[k]); }).join(",") + "}"; }
+    return JSON.stringify(o);
+  }
+  function uOf(x) { return (x && (x.u || x.ts)) || 0; }
+  function pickNewer(a, b) { var ua = uOf(a), ub = uOf(b); if (ua !== ub) { return ua > ub ? a : b; } return canon(a) <= canon(b) ? a : b; }
+  function rankCat(name) { var k; for (k = 0; k < DEFAULT.length; k++) { if (norm(DEFAULT[k][0]) === norm(name)) { return k; } } return 99; }
+  function rankSub(cname, sname) { var k, j; for (k = 0; k < DEFAULT.length; k++) { if (norm(DEFAULT[k][0]) === norm(cname)) { for (j = 0; j < DEFAULT[k][1].length; j++) { if (norm(DEFAULT[k][1][j]) === norm(sname)) { return j; } } } } return 99; }
+  function subKey(cname, sname) { return "s:" + norm(cname) + "/" + norm(sname); }
+  function groupBy(items) { /* regroupe les éléments de même id ou de même nom (deux appareils ont chacun leurs propres id au départ) */
+    var gs = [];
+    items.forEach(function (it) {
+      var g = null, i;
+      for (i = 0; i < gs.length; i++) { if (gs[i].ids.indexOf(it.id) >= 0 || gs[i].key === norm(it.name)) { g = gs[i]; break; } }
+      if (!g) { g = { ids: [], key: norm(it.name), members: [] }; gs.push(g); }
+      g.ids.push(it.id); g.members.push(it);
+    });
+    return gs;
+  }
+  function mergeNotes(lists, T) {
+    var by = {}, out = [];
+    lists.forEach(function (l) { (l || []).forEach(function (n) { if (n && n.id) { by[n.id] = by[n.id] ? pickNewer(by[n.id], n) : n; } }); });
+    Object.keys(by).forEach(function (id) { var n = by[id]; if (!(T[id] && T[id] >= uOf(n))) { out.push(n); } });
+    out.sort(function (a, b) { return (a.ts || 0) - (b.ts || 0) || (a.id < b.id ? -1 : 1); });
+    return out;
+  }
+  function orderBy(items, nameOf, winnerNames, rankOf) {
+    var idx = function (it) { var k = winnerNames.indexOf(norm(nameOf(it))); return k >= 0 ? k : 1000 + rankOf(it); };
+    return items.slice().sort(function (a, b) { return idx(a) - idx(b) || (norm(nameOf(a)) < norm(nameOf(b)) ? -1 : 1); });
+  }
+  function bestOrder(members, stampKey, namesOf) { /* l'ordre choisi le plus récemment l'emporte */
+    var best = null, mx = 0;
+    members.forEach(function (m) {
+      var s = m[stampKey] || 0;
+      if (s > mx || (s === mx && s > 0 && best && canon(namesOf(m)) < canon(namesOf(best)))) { mx = s; best = m; }
+    });
+    return { stamp: mx, names: best ? namesOf(best) : [] };
+  }
+  function mergeData(L, R) {
+    var T = {}, now = Date.now(), groups, cats, M, ord;
+    [L.tomb, R.tomb].forEach(function (t) { var k; t = t || {}; for (k in t) { if (now - t[k] < 90 * 864e5) { T[k] = Math.max(T[k] || 0, t[k]); } } });
+    groups = groupBy((L.cats || []).concat(R.cats || []));
+    cats = groups.map(function (g) {
+      var mem = g.members, best = mem.reduce(function (a, b) { return (a.u || 0) !== (b.u || 0) ? ((a.u || 0) > (b.u || 0) ? a : b) : (a.name <= b.name ? a : b); }),
+        c = { id: g.ids.slice().sort()[0], name: best.name, notes: mergeNotes(mem.map(function (m) { return m.notes; }), T), subs: [] },
+        sgs = groupBy([].concat.apply([], mem.map(function (m) { return m.subs || []; }))), so = bestOrder(mem, "so", function (m) { return (m.subs || []).map(function (s) { return norm(s.name); }); }), subs;
+      mem.forEach(function (m) { if (m.u) { c.u = Math.max(c.u || 0, m.u); } });
+      subs = sgs.map(function (sg) {
+        var sb = sg.members.reduce(function (a, b) { return (a.u || 0) !== (b.u || 0) ? ((a.u || 0) > (b.u || 0) ? a : b) : (a.name <= b.name ? a : b); }),
+          s = { id: sg.ids.slice().sort()[0], name: sb.name, notes: mergeNotes(sg.members.map(function (m) { return m.notes; }), T) }, u = 0;
+        sg.members.forEach(function (m) { u = Math.max(u, m.u || 0); }); if (u) { s.u = u; }
+        return (T[subKey(c.name, s.name)] && T[subKey(c.name, s.name)] >= u) ? null : s;
+      }).filter(Boolean);
+      c.subs = orderBy(subs, function (s) { return s.name; }, so.names, function (s) { return rankSub(c.name, s.name); });
+      if (so.stamp) { c.so = so.stamp; }
+      return c;
+    });
+    ord = bestOrder([L, R], "ord", function (d) { return (d.cats || []).map(function (c) { return norm(c.name); }); });
+    M = { v: 5, cats: orderBy(cats, function (c) { return c.name; }, ord.names, function (c) { return rankCat(c.name); }), tomb: T, fb: L.fb || [], wp: L.wp || "nuit" };
+    if (ord.stamp) { M.ord = ord.stamp; }
+    if (L.upd) { M.upd = L.upd; }
+    return M;
+  }
+  function isPristine(d) { /* données d'origine, jamais modifiées : on reprend simplement celles de l'autre appareil */
+    var n = 0, ok = true, names;
+    if (Object.keys(d.tomb || {}).length || d.ord || (d.cats || []).length !== DEFAULT.length) { return false; }
+    d.cats.forEach(function (c, i) {
+      var def = DEFAULT[i]; if (!def || norm(c.name) !== norm(def[0]) || (c.notes || []).length || c.u || c.so) { ok = false; return; }
+      names = (c.subs || []).map(function (s) { if ((s.notes || []).length || s.u) { ok = false; } return norm(s.name); });
+      if (canon(names) !== canon(def[1].map(norm))) { ok = false; }
+    });
+    return ok;
+  }
+  function payload(d) { var p = { v: 5, cats: d.cats, tomb: d.tomb || {} }; if (d.ord) { p.ord = d.ord; } return p; }
+  function parseRemote(text) {
+    var d;
+    try { d = JSON.parse(text); } catch (e) { return null; }
+    if (!d || !Array.isArray(d.cats)) { return null; }
+    d.cats.forEach(function (c) { c.notes = c.notes || []; c.subs = c.subs || []; c.subs.forEach(function (s) { s.notes = s.notes || []; }); });
+    d.tomb = (d.tomb && typeof d.tomb === "object") ? d.tomb : {};
+    return d;
+  }
+  window.__merge = { mergeData: mergeData, payload: payload, canon: canon };
+
+  function ghStore() { try { var o = JSON.parse(window.localStorage.getItem(SYNCK) || "{}"); return { repo: o.repo || "", token: o.token || "" }; } catch (e) { return { repo: "", token: "" }; } }
+  function ghHead(tok) { return { "Authorization": "Bearer " + tok, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }; }
+  function b64enc(s) { var b = new TextEncoder().encode(s), i, bin = ""; for (i = 0; i < b.length; i++) { bin += String.fromCharCode(b[i]); } return btoa(bin); }
+  function b64dec(s) { var bin = atob(String(s).replace(/\s/g, "")), b = new Uint8Array(bin.length), i; for (i = 0; i < bin.length; i++) { b[i] = bin.charCodeAt(i); } return new TextDecoder().decode(b); }
+  window.__pull = function (st, sha, text) { var cb = pullCb; pullCb = null; if (cb) { cb(String(st), String(sha || ""), String(text || "")); } };
+  window.__push = function (st, sha) { var cb = pushCb; pushCb = null; if (cb) { cb(String(st), String(sha || "")); } };
+  function ghPull(cb) {
+    var c;
+    pullCb = cb;
+    if (NATIVE) { post("bkPull", []); return; }
+    c = ghStore();
+    window.fetch("https://api.github.com/repos/" + c.repo + "/contents/notes.json?t=" + Date.now(), { headers: ghHead(c.token), cache: "no-store" }).then(function (r) {
+      if (r.status === 404) { return window.__pull("none", "", ""); }
+      if (r.status === 401 || r.status === 403) { return window.__pull("err:jeton refusé ou expiré", "", ""); }
+      if (!r.ok) { return window.__pull("err:GitHub a répondu " + r.status, "", ""); }
+      return r.json().then(function (o) {
+        if (!o || typeof o.content !== "string" || !o.content) { return window.__pull("err:fichier distant vide ou trop gros", "", ""); }
+        window.__pull("ok", o.sha, b64dec(o.content));
+      });
+    }).catch(function () { window.__pull("err:réseau indisponible", "", ""); });
+  }
+  function ghPush(text, sha, cb) {
+    var c, body;
+    pushCb = cb;
+    if (NATIVE) { post("bkPush", [text, sha || ""]); return; }
+    c = ghStore(); body = { message: "Synchronisation " + new Date().toISOString().slice(0, 16).replace("T", " "), content: b64enc(text) }; if (sha) { body.sha = sha; }
+    window.fetch("https://api.github.com/repos/" + c.repo + "/contents/notes.json", { method: "PUT", headers: ghHead(c.token), body: JSON.stringify(body), cache: "no-store" }).then(function (r) {
+      if (r.status === 200 || r.status === 201) { return r.json().then(function (o) { window.__push("ok", o && o.content && o.content.sha); }); }
+      if (r.status === 409 || r.status === 422) { return window.__push("conflict", ""); }
+      if (r.status === 401 || r.status === 403) { return window.__push("err:jeton refusé (droit « Contents : lecture et écriture » nécessaire)", ""); }
+      if (r.status === 404) { return window.__push("err:dépôt introuvable, ou jeton sans accès à ce dépôt", ""); }
+      window.__push("err:GitHub a répondu " + r.status, "");
+    }).catch(function () { window.__push("err:réseau indisponible", ""); });
+  }
+  function userBusy() { var a = document.activeElement; return !!drag || !!press || (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA")) || view.n === "set"; }
+  function syncNow(manual) {
+    var i = bkInfo();
+    if (!i.repo || !i.token) { if (manual) { toast("Configure d'abord le dépôt et le jeton (Réglages).", true); } return; }
+    if (locked) { return; }
+    if (syncBusy) { syncAgain = true; return; }
+    syncBusy = true; syncTries = 0; syncCycle();
+  }
+  function syncFinish(res) {
+    syncBusy = false;
+    if (res.indexOf("ok") === 0) { try { window.localStorage.setItem(SYNCT, String(Math.floor(Date.now() / 1000))); } catch (e) { } }
+    window.__bk(res);
+    if (syncAgain) { syncAgain = false; setTimeout(function () { syncNow(false); }, 400); }
+  }
+  function syncCycle() {
+    ghPull(function (st, sha, text) {
+      var remote = null, M, needPush, applied = false;
+      if (st.indexOf("err:") === 0) { return syncFinish(st); }
+      if (st === "ok") {
+        remote = parseRemote(text);
+        if (!remote) { return syncFinish("err:le fichier notes.json du dépôt est illisible (rien n'a été écrasé)"); }
+        M = isPristine(D) ? { v: 5, cats: remote.cats, tomb: remote.tomb, fb: D.fb || [], wp: D.wp || "nuit", ord: remote.ord, upd: D.upd } : mergeData(D, remote);
+        if (canon(M) !== canon(D)) { D = M; applied = true; save(true); }
+        needPush = canon(payload(D)) !== canon(payload(remote));
+      } else { needPush = true; }
+      if (applied && !userBusy()) { render(); }
+      if (!needPush) { return syncFinish("ok:inchangé"); }
+      ghPush(JSON.stringify(payload(D), null, 1), sha, function (ps) {
+        if (ps === "ok") { syncFinish(applied ? "ok:fusion" : "ok"); }
+        else if (ps === "conflict" && ++syncTries < 4) { syncCycle(); }
+        else { syncFinish(ps === "conflict" ? "err:conflit répété, réessaie" : ps); }
+      });
+    });
+  }
+  function bkRun(manual) { syncNow(manual); }
   window.__bk = function (res) {
     var m = $("bkmsg"), had = !!bkErr;
     res = String(res || "");
     if (res.indexOf("err:") === 0) { bkErr = res.slice(4); bkMsg = "Échec : " + bkErr; }
-    else if (res.indexOf("ok") === 0) { bkErr = ""; bkMsg = res === "ok:inchangé" ? "Déjà à jour : aucune modification depuis la dernière sauvegarde." : "Sauvegarde envoyée."; }
+    else if (res.indexOf("ok") === 0) { bkErr = ""; bkMsg = res === "ok:inchangé" ? "Tout est à jour." : res === "ok:fusion" ? "Notes fusionnées avec celles de tes autres appareils." : "Synchronisé."; }
     else { return; }
     if (m) { m.textContent = bkMsg + (res.indexOf("ok") === 0 ? " " + bkLine(bkInfo()) : ""); }
     if (had !== !!bkErr && view.n !== "set") { render(); }
   };
-  setTimeout(function () { bkRun(false); }, 15000);
-  document.addEventListener("visibilitychange", function () { if (!document.hidden) { bkRun(false); } });
+  setTimeout(function () { syncNow(false); }, 3000);
+  setInterval(function () { if (!document.hidden) { syncNow(false); } }, 90000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) { syncNow(false); } });
 
   /* ---------- mises à jour de l'interface ---------- */
   var lastCheck = 0, busy = false;

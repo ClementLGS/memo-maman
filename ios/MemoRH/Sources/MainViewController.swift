@@ -87,6 +87,16 @@ final class MainViewController: UIViewController, WKNavigationDelegate, WKUIDele
                 let js = "window.__bk(\(Self.literal(result)))"
                 DispatchQueue.main.async { self?.webView.evaluateJavaScript(js, completionHandler: nil) }
             }
+        case "bkPull":
+            Backup.pull { [weak self] st, sha, text in
+                let js = "window.__pull(\(Self.literal(st)),\(Self.literal(sha)),\(Self.literal(text)))"
+                DispatchQueue.main.async { self?.webView.evaluateJavaScript(js, completionHandler: nil) }
+            }
+        case "bkPush":
+            Backup.push(text: (a.first as? String) ?? "", sha: a.count > 1 ? ((a[1] as? String) ?? "") : "") { [weak self] st, sha in
+                let js = "window.__push(\(Self.literal(st)),\(Self.literal(sha)))"
+                DispatchQueue.main.async { self?.webView.evaluateJavaScript(js, completionHandler: nil) }
+            }
         case "feedbackSend":
             Backup.sendFeedback((a.first as? String) ?? "") { [weak self] result in
                 let js = "window.__fb(\(Self.literal(result)))"

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Sauvegarde des notes dans un dépôt GitHub PRIVÉ (fichier notes.json : l'historique Git garde les versions successives).
+/// Synchronisation et sauvegarde des notes dans un dépôt GitHub PRIVÉ (fichier notes.json : l'historique Git garde les versions successives).
 /// Déclenchée par la page (à l'ouverture, au retour dans l'appli, quelques minutes après une modification, ou à la demande) :
 /// iOS ne laisse pas une appli installée hors App Store travailler en arrière-plan, donc rien ne part si l'appli reste fermée.
 enum Backup {
@@ -127,6 +127,77 @@ enum Backup {
                 default: done("err:GitHub a répondu \(ps)")
                 }
             }.resume()
+        }.resume()
+    }
+
+    // MARK: - Synchronisation (la page fusionne ; l'appli ne fait que lire et écrire notes.json)
+
+    /// Texte (UTF-8) d'un champ « content » renvoyé par GitHub (base64 coupé en lignes).
+    static func decodeContent(_ b64: String) -> String? {
+        let clean = b64.replacingOccurrences(of: "\n", with: "").replacingOccurrences(of: "\r", with: "")
+        guard !clean.isEmpty, let d = Data(base64Encoded: clean) else { return nil }
+        return String(data: d, encoding: .utf8)
+    }
+
+    /// Message d'erreur lisible pour un code HTTP d'écriture ; nil si c'est un succès. « conflict » = le fichier a changé entre-temps.
+    static func pushOutcome(_ status: Int) -> String? {
+        switch status {
+        case 200, 201: return nil
+        case 0: return "err:réseau indisponible"
+        case 401, 403: return "err:jeton refusé (droit « Contents : lecture et écriture » nécessaire)"
+        case 404: return "err:dépôt introuvable, ou jeton sans accès à ce dépôt"
+        case 409, 422: return "conflict"
+        case let c: return "err:GitHub a répondu \(c)"
+        }
+    }
+
+    private static func notesRequest(_ method: String, body: Data?) -> URLRequest? {
+        let token = Keychain.get() ?? ""
+        guard validRepo(repo), !token.isEmpty, let url = URL(string: "https://api.github.com/repos/\(repo)/contents/notes.json") else { return nil }
+        var r = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 25)
+        r.httpMethod = method
+        r.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        r.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        r.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
+        r.setValue("PriseDeNotesCiolek", forHTTPHeaderField: "User-Agent")
+        if let b = body { r.httpBody = b; r.setValue("application/json", forHTTPHeaderField: "Content-Type") }
+        return r
+    }
+
+    /// Lit notes.json. Rappel : (« ok » | « none » | « err:… », sha, texte).
+    static func pull(completion: @escaping (String, String, String) -> Void) {
+        guard let req = notesRequest("GET", body: nil) else { completion("err:synchronisation non configurée (Réglages)", "", ""); return }
+        URLSession.shared.dataTask(with: req) { data, resp, _ in
+            let st = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            switch st {
+            case 0: completion("err:réseau indisponible", "", "")
+            case 404: completion("none", "", "")
+            case 401, 403: completion("err:jeton refusé ou expiré", "", "")
+            case 200:
+                guard let data = data, let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let sha = o["sha"] as? String, let c = o["content"] as? String, let text = decodeContent(c)
+                else { completion("err:fichier distant vide ou trop gros", "", ""); return }
+                completion("ok", sha, text)
+            default: completion("err:GitHub a répondu \(st)", "", "")
+            }
+        }.resume()
+    }
+
+    /// Écrit notes.json (sha = version qu'on a lue, vide si le fichier n'existe pas encore). Rappel : (« ok » | « conflict » | « err:… », nouveau sha).
+    static func push(text: String, sha: String, completion: @escaping (String, String) -> Void) {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "fr_FR")
+        f.timeZone = TimeZone(identifier: "Europe/Paris")
+        f.dateFormat = "yyyy-MM-dd HH:mm"
+        guard !text.isEmpty, text.utf8.count < 5_000_000,
+              let body = putBody(message: "Synchronisation " + f.string(from: Date()), content: Data(text.utf8), sha: sha.isEmpty ? nil : sha),
+              let req = notesRequest("PUT", body: body) else { completion("err:synchronisation non configurée (Réglages)", ""); return }
+        URLSession.shared.dataTask(with: req) { data, resp, _ in
+            let st = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            if let bad = pushOutcome(st) { completion(bad, ""); return }
+            var newSha = ""
+            if let data = data, let o = try? JSONSerialization.jsonObject(with: data) as? [String: Any], let c = o["content"] as? [String: Any] { newSha = (c["sha"] as? String) ?? "" }
+            completion("ok", newSha)
         }.resume()
     }
 

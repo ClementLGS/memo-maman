@@ -58,6 +58,17 @@ check("réglages : dépôt invalide refusé", Config.problem(Config.Values(updat
 check("réglages : source de mise à jour invalide refusée", Config.problem(Config.Values(update: "a b", backupRepo: "", token: "")) != nil)
 check("réglages : branche acceptée", Config.problem(Config.Values(update: "a/b@dev", backupRepo: "", token: "")) == nil)
 
+// Synchronisation : décodage du contenu GitHub et codes d'écriture
+check("décodage base64 en lignes", Backup.decodeContent("eyJh\nIjoxfQ==\n") == "{\"a\":1}")
+check("décodage accents UTF-8", Backup.decodeContent(Data("é à — ok".utf8).base64EncodedString()) == "é à — ok")
+check("décodage : vide refusé", Backup.decodeContent("") == nil)
+check("décodage : base64 invalide refusé", Backup.decodeContent("%%%") == nil)
+check("écriture 200/201 = succès", Backup.pushOutcome(200) == nil && Backup.pushOutcome(201) == nil)
+check("écriture 409/422 = conflit", Backup.pushOutcome(409) == "conflict" && Backup.pushOutcome(422) == "conflict")
+check("écriture 401 : jeton", (Backup.pushOutcome(401) ?? "").hasPrefix("err:jeton"))
+check("écriture 0 : réseau", Backup.pushOutcome(0) == "err:réseau indisponible")
+check("écriture 500 : code affiché", Backup.pushOutcome(500) == "err:GitHub a répondu 500")
+
 // version.json du dépôt = index.html du dépôt (sinon l'appli refuserait la mise à jour : empreinte différente)
 let argv = CommandLine.arguments
 if argv.count >= 3, let vjText = try? String(contentsOfFile: argv[1], encoding: .utf8), let htmlData = try? Data(contentsOf: URL(fileURLWithPath: argv[2])),
