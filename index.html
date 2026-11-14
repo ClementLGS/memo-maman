@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1016 TDBA:4-->
+<!--TDBV:1017 TDBA:4-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -58,10 +58,13 @@ main{padding:0 16px}
   header.top{padding:22px 16px 14px}
   header.top h1{font-size:30px}
   .search{max-width:520px}
-  .mods,.mods.m3{grid-template-columns:repeat(auto-fill,150px);gap:14px;justify-content:start}
-  .wpgrid{grid-template-columns:repeat(auto-fill,150px);gap:14px;justify-content:start}
-  .mi,.m3 .mi{font-size:15px}
-  .mi svg,.m3 .mi svg{width:46px;height:46px}
+  .mods,.mods.m3{grid-template-columns:repeat(auto-fill,100px);gap:12px;justify-content:start}
+  .wpgrid{grid-template-columns:repeat(auto-fill,100px);gap:12px;justify-content:start}
+  .mi,.m3 .mi{font-size:12.5px;gap:6px;border-radius:14px}
+  .m3 .mi{padding:22px 3px 4px;font-size:11.5px}
+  .mi svg,.m3 .mi svg{width:31px;height:31px}
+  .mi .bd,.m3 .mi .bd{top:5px;right:5px;min-width:19px;height:19px;font-size:11px;border-radius:10px}
+  .wpt{font-size:12px}
   .box{max-width:620px}
   .fbi{max-width:620px}
   #modal{align-items:center}
@@ -142,7 +145,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1016", 10) || 0, UI_NAME = "1.16";
+  var UI_CODE = parseInt("1017", 10) || 0, UI_NAME = "1.17";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
