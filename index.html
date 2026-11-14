@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1019 TDBA:5-->
+<!--TDBV:1020 TDBA:5-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -145,7 +145,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1019", 10) || 0, UI_NAME = "1.19";
+  var UI_CODE = parseInt("1020", 10) || 0, UI_NAME = "1.20";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -686,7 +686,7 @@ window.MEMO_RH = true;
     var json = JSON.stringify(D, null, 1), i = bkInfo(), h = '<header class="top"><button class="ib txt" data-a="back">‹ Retour</button><h1>Réglages</h1></header><main>' + banners();
     h += '<div class="box"><h3>Synchronisation GitHub</h3><p>Tes notes sont synchronisées entre tes appareils (téléphone, ordinateur) par un dépôt GitHub <b>privé</b>, qui sert aussi de sauvegarde : si un appareil est perdu, les notes sont retrouvées. La synchronisation se fait à l\'ouverture, quand tu reviens sur l\'appli, toutes les 90 secondes et peu après chaque modification.</p>'
       + '<p id="bkmsg" style="color:var(--ink)">' + esc(bkMsg || bkLine(i)) + "</p>"
-      + '<input class="fld" id="bkRepo" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="propriétaire/nom-du-dépôt" value="' + esc(i.repo) + '">'
+      + '<input class="fld" id="bkRepo" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="propriétaire/nom-du-dépôt" value="' + esc(i.repo || DEFREPO) + '">'
       + '<input class="fld" id="bkTok" type="password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="' + (i.token ? "Jeton enregistré (laisser vide pour le garder)" : "Jeton GitHub (github_pat_…)") + '">'
       + '<div class="row"><button class="btn" data-a="bkset">Enregistrer</button><button class="btn sec2" data-a="bknow">Synchroniser maintenant</button></div>'
       + (NATIVE ? "" : '<div class="row"><label class="btn sec2" style="display:inline-flex;align-items:center">Importer reglages.txt<input type="file" id="cfgFile" accept=".txt,text/plain" hidden></label></div>')
@@ -926,11 +926,16 @@ window.MEMO_RH = true;
     };
     rd.readAsText(f);
   });
+  setTimeout(function () { /* lien de configuration : …/#jeton=github_pat_… (le fragment n'est jamais envoyé au serveur ; il est effacé de l'adresse) */
+    var m = /[#&]jeton=([A-Za-z0-9_]+)/.exec(window.location.hash || "");
+    if (!m || NATIVE) { return; }
+    try { window.localStorage.setItem("memo-rh-gh", JSON.stringify({ repo: ghStore().repo || DEFREPO, token: m[1] })); window.history.replaceState(null, "", window.location.pathname + window.location.search); setTimeout(function () { toast("Synchronisation configurée."); syncNow(true); }, 1200); } catch (e) { }
+  }, 0);
   document.addEventListener("visibilitychange", function () { if (!document.hidden) { cfgImport(false); } });
   setTimeout(function () { cfgImport(false); }, 600);
 
   /* ---------- synchronisation GitHub : fusion des notes de tous les appareils ---------- */
-  var SYNCK = "memo-rh-gh", SYNCT = "memo-rh-lastsync", syncBusy = false, syncAgain = false, syncTries = 0, pullCb = null, pushCb = null;
+  var DEFREPO = "ClementLGS/memo-maman-save", SYNCK = "memo-rh-gh", SYNCT = "memo-rh-lastsync", syncBusy = false, syncAgain = false, syncTries = 0, pullCb = null, pushCb = null;
   function canon(o) {
     if (Array.isArray(o)) { return "[" + o.map(canon).join(",") + "]"; }
     if (o && typeof o === "object") { return "{" + Object.keys(o).sort().filter(function (k) { return o[k] !== undefined; }).map(function (k) { return JSON.stringify(k) + ":" + canon(o[k]); }).join(",") + "}"; }
@@ -1016,7 +1021,7 @@ window.MEMO_RH = true;
   }
   window.__merge = { mergeData: mergeData, payload: payload, canon: canon };
 
-  function ghStore() { try { var o = JSON.parse(window.localStorage.getItem(SYNCK) || "{}"); return { repo: o.repo || "", token: o.token || "" }; } catch (e) { return { repo: "", token: "" }; } }
+  function ghStore() { try { var o = JSON.parse(window.localStorage.getItem(SYNCK) || "{}"); return { repo: o.repo || (o.token ? DEFREPO : ""), token: o.token || "" }; } catch (e) { return { repo: "", token: "" }; } }
   function ghHead(tok) { return { "Authorization": "Bearer " + tok, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }; }
   function b64enc(s) { var b = new TextEncoder().encode(s), i, bin = ""; for (i = 0; i < b.length; i++) { bin += String.fromCharCode(b[i]); } return btoa(bin); }
   function b64dec(s) { var bin = atob(String(s).replace(/\s/g, "")), b = new Uint8Array(bin.length), i; for (i = 0; i < bin.length; i++) { b[i] = bin.charCodeAt(i); } return new TextDecoder().decode(b); }
