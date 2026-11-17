@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1022 TDBA:5-->
+<!--TDBV:1023 TDBA:5-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -153,7 +153,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1022", 10) || 0, UI_NAME = "1.22";
+  var UI_CODE = parseInt("1023", 10) || 0, UI_NAME = "1.23";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -451,7 +451,8 @@ window.MEMO_RH = true;
   ];
   /* ---------- moteur des fonds animés (canvas) ---------- */
   var WPE = { list: [], raf: 0, main: null }, WPD = {};
-  var REDUCED = false; try { REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { }
+  /* Les fonds animés sont un choix explicite : ils bougent même si le système demande « réduire les animations » (sinon ils restaient figés sur PC). */
+  var REDUCED = false;
   function nStars(w, h, base) { return Math.max(24, Math.round(base * w * h / 334000)); }
   WPD.vagues = function (g, w, h, t) {
     var i, x, y, gr, hz = h * .5, sx = w * .7, cols = ["rgba(236,110,90,.55)", "rgba(190,80,110,.7)", "rgba(110,60,120,.85)", "rgba(52,50,110,.92)", "rgba(24,38,90,.96)", "rgba(10,22,60,1)"];
