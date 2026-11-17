@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<!--TDBV:1023 TDBA:5-->
+<!--TDBV:1024 TDBA:5-->
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Prise de notes Ciolek</title>
@@ -153,7 +153,7 @@ main{padding:0 16px}
 window.MEMO_RH = true;
 (function () {
   "use strict";
-  var UI_CODE = parseInt("1023", 10) || 0, UI_NAME = "1.23";
+  var UI_CODE = parseInt("1024", 10) || 0, UI_NAME = "1.24";
   var REPO = { owner: "ClementLGS", repo: "memo-maman", branch: "main" };
   /* Dépôt des mises à jour : « propriétaire/nom » ou « propriétaire/nom@branche » (réglage D.upd), sinon le dépôt par défaut. */
   function parseSrc(s) {
@@ -282,7 +282,7 @@ window.MEMO_RH = true;
   function openCount(list) { return list.filter(function (n) { return !n.done; }).length; }
   function catOpen(c) { return c.subs.reduce(function (t, s) { return t + openCount(s.notes); }, openCount(c.notes)); }
   function color(i) { return i === 8 ? "hsl(40 88% 54%)" : "hsl(" + ((i * 53 + 222) % 360) + " 58% 52%)"; }
-  function rk(c) { var k; for (k = 0; k < DEFAULT.length; k++) { if (norm(DEFAULT[k][0]) === norm(c.name)) { return k; } } return Math.max(D.cats.indexOf(c), 9); }
+  function rk(c) { var k; for (k = 0; k < DEFAULT.length; k++) { if (norm(DEFAULT[k][0]) === norm(c.name)) { return k; } } var h = 0, nm = norm(c.name), i; for (i = 0; i < nm.length; i++) { h = (h * 31 + nm.charCodeAt(i)) % 997; } return 100 + h; }
   function fmt(ts) { try { return new Date(ts).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }); } catch (e) { return ""; } }
   var toastT = 0;
   function toast(msg, bad) {
@@ -371,7 +371,7 @@ window.MEMO_RH = true;
     var box = $("home"), q = query.trim().toLowerCase(), h = "", found = [];
     if (!box) { return; }
     if (!q) {
-      var IC = [
+      var IC_FOLDER = '<path d="M3 7a2 2 0 0 1 2-2h4l2 2.500h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>', IC = [
         '<path d="M4 7l2 2 3.500-3.500M4 15l2 2 3.500-3.500M13 7.500h7M13 15.500h7"/>',
         '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.300 2.700-6 6-6s6 2.700 6 6"/><circle cx="17.500" cy="9" r="2.500"/><path d="M17 14.300c2.500.3 4.500 2.500 4.500 5.200"/>',
         '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.400 3.600-8 8-8s8 3.600 8 8"/>',
@@ -387,8 +387,9 @@ window.MEMO_RH = true;
         var n = catOpen(c);
         h += '<button class="mi" data-ro="1" style="--c:' + color(rk(c)) + '" data-a="open" data-c="' + c.id + '" aria-label="' + esc(c.name) + ", " + n + ' à faire">'
           + (n ? '<span class="bd">' + n + "</span>" : "")
-          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (IC[rk(c)] || IC[3]) + "</svg><span>" + esc(c.name) + "</span></button>";
+          + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (IC[rk(c)] || IC_FOLDER) + "</svg><span>" + esc(c.name) + "</span></button>";
       });
+      h += '<button class="mi new" data-a="catadd" aria-label="Nouveau thème"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Thème</span></button>';
       h += '<button class="mi" style="--c:hsl(215 18% 62%)" data-a="autre" aria-label="Autre">' + (D.fb.length ? '<span class="bd">' + D.fb.length + "</span>" : "")
         + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + IC_AUTRE + "</svg><span>Autre</span></button>";
       box.innerHTML = h + '</div><p class="hint" style="margin-top:12px">Appui long sur une catégorie pour la déplacer.</p>'; return;
@@ -753,10 +754,28 @@ window.MEMO_RH = true;
             var k = cc.subs.indexOf(ss); if (k >= 0) { cc.subs.splice(k, 1); D.tomb[subKey(cc.name, ss.name)] = Date.now(); save(); render(); } });
         } }], buttons: [{ label: "Fermer", kind: "sec2" }] });
     }
+    else if (a === "catadd") {
+      ask("Nouveau thème", "", "Nom du thème", "Créer", function (v) {
+        v = String(v || "").trim();
+        if (!v) { return; }
+        if (D.cats.some(function (x) { return norm(x.name) === norm(v); })) { return toast("Ce thème existe déjà.", true); }
+        delete D.tomb[cKey(v)]; D.cats.push({ id: uid(), name: v, notes: [], subs: [], u: Date.now() }); save(); render();
+        toast("Thème « " + v + " » créé.");
+      });
+    }
     else if (a === "catmenu") {
       cc = cat(c); if (!cc) { return; }
       dialog({ title: cc.name, menu: [
         { label: "Renommer la catégorie", fn: function () { ask("Renommer la catégorie", cc.name, "", "Enregistrer", function (v) { cc.name = v; cc.u = Date.now(); save(); render(); }); } },
+        { label: "Supprimer la catégorie", danger: true, fn: function () {
+          var cnt = cc.notes.length + cc.subs.reduce(function (t, x) { return t + x.notes.length; }, 0);
+          confirmBox("Supprimer « " + cc.name + " » ?", cnt ? "Ses " + cnt + " note(s) et ses sous-thèmes seront supprimés aussi." : "Elle est vide.", "Supprimer", function () {
+            var k = D.cats.indexOf(cc), now = Date.now();
+            if (k < 0) { return; }
+            cc.notes.forEach(function (n) { D.tomb[n.id] = now; }); cc.subs.forEach(function (x) { x.notes.forEach(function (n) { D.tomb[n.id] = now; }); });
+            D.cats.splice(k, 1); D.tomb[cKey(cc.name)] = now; view = { n: "home" }; save(); render();
+          });
+        } },
         { label: showDone ? "Masquer les notes terminées" : "Afficher les notes terminées", fn: function () { showDone = !showDone; render(); } },
         { label: "Effacer les notes terminées", danger: true, fn: function () {
           confirmBox("Effacer les notes terminées ?", "Dans cette catégorie et ses sous-thèmes.", "Effacer", function () {
@@ -955,6 +974,7 @@ window.MEMO_RH = true;
   function pickNewer(a, b) { var ua = uOf(a), ub = uOf(b); if (ua !== ub) { return ua > ub ? a : b; } return canon(a) <= canon(b) ? a : b; }
   function rankCat(name) { var k; for (k = 0; k < DEFAULT.length; k++) { if (norm(DEFAULT[k][0]) === norm(name)) { return k; } } return 99; }
   function rankSub(cname, sname) { var k, j; for (k = 0; k < DEFAULT.length; k++) { if (norm(DEFAULT[k][0]) === norm(cname)) { for (j = 0; j < DEFAULT[k][1].length; j++) { if (norm(DEFAULT[k][1][j]) === norm(sname)) { return j; } } } } return 99; }
+  function cKey(name) { return "c:" + norm(name); }
   function subKey(cname, sname) { return "s:" + norm(cname) + "/" + norm(sname); }
   function groupBy(items) { /* regroupe les éléments de même id ou de même nom (deux appareils ont chacun leurs propres id au départ) */
     var gs = [];
@@ -1002,8 +1022,11 @@ window.MEMO_RH = true;
       }).filter(Boolean);
       c.subs = orderBy(subs, function (s) { return s.name; }, so.names, function (s) { return rankSub(c.name, s.name); });
       if (so.stamp) { c.so = so.stamp; }
-      return c;
-    });
+      var newest = c.u || 0;
+      c.notes.forEach(function (n) { newest = Math.max(newest, uOf(n)); });
+      c.subs.forEach(function (x) { newest = Math.max(newest, x.u || 0); x.notes.forEach(function (n) { newest = Math.max(newest, uOf(n)); }); });
+      return (T[cKey(c.name)] && T[cKey(c.name)] >= newest) ? null : c;
+    }).filter(Boolean);
     ord = bestOrder([L, R], "ord", function (d) { return (d.cats || []).map(function (c) { return norm(c.name); }); });
     M = { v: 5, cats: orderBy(cats, function (c) { return c.name; }, ord.names, function (c) { return rankCat(c.name); }), tomb: T, fb: L.fb || [], wp: L.wp || "nuit" };
     if (ord.stamp) { M.ord = ord.stamp; }
